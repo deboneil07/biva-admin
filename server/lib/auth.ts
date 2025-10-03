@@ -25,11 +25,6 @@ export const auth = betterAuth({
                 defaultValue: 'employee', 
             }
         },
-        // roles: {
-        //     admin: 'admin',
-        //     employee: 'employee',
-        //     'media-handler': 'media-handler',
-        // }
     },
     session: {
         expiresIn: 60 * 60 * 24,
@@ -37,7 +32,7 @@ export const auth = betterAuth({
     },
     plugins: [
         admin({
-            adminUserIds: ['IyOLTbLrISwOdmyHJeG0aDgDqjyHnFJp']
+            adminUserIds: ['IyOLTbLrISwOdmyHJeG0aDgDqjyHnFJp'] // keep in env
         })
     ]
 })
