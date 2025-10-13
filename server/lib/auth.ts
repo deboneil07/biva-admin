@@ -26,17 +26,17 @@ export const auth = betterAuth({
       },
     },
   },
+  trustedOrigins: ["http://localhost:5173"],
   session: {
     cookieCache: {
       enabled: true,
       maxAge: 60 * 5, // 5 minute
     },
-    trustedOrigins: ["http://localhost:5173"],
-    expiresIn: 60 * 60 * 24, // 1 day
-    plugins: [
-      admin({
-        adminUserIds: ["IyOLTbLrISwOdmyHJeG0aDgDqjyHnFJp"], 
-      }),
-    ],
+    expiresIn: 60 * 60 * 24, // 1 day"
   },
+  plugins: [
+    admin({
+      adminUserIds: ["IyOLTbLrISwOdmyHJeG0aDgDqjyHnFJp"],
+    }),
+  ],
 });

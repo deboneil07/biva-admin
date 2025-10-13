@@ -20,7 +20,7 @@ export function MediaUploadDialog() {
     <Dialog>
       <form>
         <DialogTrigger asChild>
-          <Button variant="outline">
+          <Button variant="outline" size="sm">
             <Upload className="w-4 h-4 mr-2" /> Upload
           </Button>
         </DialogTrigger>

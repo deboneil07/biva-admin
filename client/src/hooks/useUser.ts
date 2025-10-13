@@ -1,5 +1,5 @@
 import { instance } from "@/utils/axios";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 async function getUserApi() {
   return await instance.get("/admin/get-users");
@@ -14,19 +14,21 @@ async function editUserApi({ id, role }: { id: string; role: string }) {
 }
 
 async function deleteUserApi({ id }: { id: string }) {
-  return await instance.post("/admin/delete-user", { id });
+  return await instance.delete(`/admin/delete-user/${id}`);
 }
 
 export default function useUser() {
-  const {
-    refetch: getUsers,
-    isFetching: isGettingUsersPending,
-    data: getUsersData,
-    error: getUsersError,
-  } = useQuery({
+
+  const queryClient = useQueryClient();
+
+  const usersQuery = useQuery({
     queryKey: ["get-users"],
     queryFn: getUserApi,
-    enabled: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    // gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    retry: false, // Disable retry to prevent infinite loops
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
 
   const {
@@ -36,6 +38,9 @@ export default function useUser() {
     error: createUserError,
   } = useMutation({
     mutationFn: createUserApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["get-users"] })
+    }
   });
 
   const {
@@ -45,6 +50,9 @@ export default function useUser() {
     error: editUserError,
   } = useMutation({
     mutationFn: editUserApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["get-users"] })
+    }
   });
 
   const {
@@ -54,13 +62,13 @@ export default function useUser() {
     error: deleteUserError,
   } = useMutation({
     mutationFn: deleteUserApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["get-users"] })
+    }
   });
 
   return {
-    getUsers,
-    isGettingUsersPending,
-    getUsersData,
-    getUsersError,
+    ...usersQuery,
 
     createUser,
     isCreatingUserPending,

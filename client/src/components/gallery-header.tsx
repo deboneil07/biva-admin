@@ -4,11 +4,14 @@ import { useMediaStore } from "@/store/media-store";
 import { Badge } from "./ui/badge";
 import {  Trash } from "lucide-react";
 
+
 export default function GalleryHeader() {
   const { count, resetStore } = useMediaStore();
 
+
   return (
     <div className="flex justify-end items-center gap-5">
+     
       {count > 0 && (
         <Button
           variant="destructive"

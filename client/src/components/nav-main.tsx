@@ -24,8 +24,8 @@ interface NavItem {
 }
 
 export function NavMain({ items }: { items: NavItem[] }) {
-  // Recursive function to render menu items
-  const renderNavItem = (item: NavItem) => {
+  // Recursive function to render sub menu items
+  const renderSubNavItem = (item: NavItem): React.ReactNode => {
     if (item.items && item.items.length > 0) {
       return (
         <Collapsible
@@ -34,21 +34,21 @@ export function NavMain({ items }: { items: NavItem[] }) {
           defaultOpen={item.isActive}
           className="group/collapsible"
         >
-          <SidebarMenuItem>
+          <SidebarMenuSubItem>
             <CollapsibleTrigger asChild>
-              <SidebarMenuButton tooltip={item.title}>
+              <SidebarMenuSubButton>
                 {item.icon && <item.icon />}
                 <span>{item.title}</span>
                 <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-              </SidebarMenuButton>
+              </SidebarMenuSubButton>
             </CollapsibleTrigger>
 
             <CollapsibleContent>
               <SidebarMenuSub>
-                {item.items.map((subItem) => renderNavItem(subItem))}
+                {item.items.map((subItem) => renderSubNavItem(subItem))}
               </SidebarMenuSub>
             </CollapsibleContent>
-          </SidebarMenuItem>
+          </SidebarMenuSubItem>
         </Collapsible>
       )
     }
@@ -67,11 +67,47 @@ export function NavMain({ items }: { items: NavItem[] }) {
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => (
-          <SidebarMenuItem key={item.title}>
-            {renderNavItem(item)}
-          </SidebarMenuItem>
-        ))}
+        {items.map((item) => {
+          if (item.items && item.items.length > 0) {
+            // Parent item with children
+            return (
+              <Collapsible
+                key={item.title}
+                asChild
+                defaultOpen={item.isActive}
+                className="group/collapsible"
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton tooltip={item.title}>
+                      {item.icon && <item.icon />}
+                      <span>{item.title}</span>
+                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {item.items.map((subItem) => renderSubNavItem(subItem))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            )
+          } else {
+            // Single link item at top level
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild>
+                  <a href={item.url}>
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          }
+        })}
       </SidebarMenu>
     </SidebarGroup>
   )
