@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1759137997567,
-      "tag": "0000_fancy_titanium_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1759154939446,
-      "tag": "0001_right_doorman",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1759170093060,
-      "tag": "0002_fixed_lizard",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1759170672659,
-      "tag": "0003_redundant_fantastic_four",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1760384459325,
-      "tag": "0004_kind_lenny_balinger",
+      "when": 1760388407418,
+      "tag": "0000_chilly_overlord",
       "breakpoints": true
     }
   ]
