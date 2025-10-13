@@ -30,6 +30,7 @@ export const auth = betterAuth({
         expiresIn: 60 * 60 * 24,
 
     },
+    trustedOrigins: ["http://localhost:5173"],
     plugins: [
         admin({
             adminUserIds: ['IyOLTbLrISwOdmyHJeG0aDgDqjyHnFJp'] // keep in env

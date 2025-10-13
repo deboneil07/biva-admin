@@ -1,5 +1,5 @@
 import { DataTable } from "@/components/data-table";
-import data from "../components/data.json";
+import data from "../data/data.json"
 
 export default function Team() {
   return (
