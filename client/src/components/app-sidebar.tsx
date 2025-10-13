@@ -39,19 +39,57 @@ const data = {
       icon: IconUsers,
     },
     {
-      title: "Lifecycle",
-      url: "#",
-      icon: IconListDetails,
-    },
-    {
-      title: "Analytics",
+      title: "Hotel",
       url: "#",
       icon: IconChartBar,
+      items: [
+        {
+          title: "Hotel Media",
+          url: "/analytics/overview",
+        },
+        {
+          title: "Add Room",
+          url: "/analytics/reports",
+        },
+        {
+          title: "Add Event",
+          url: "/analytics/insights",
+        },
+        {
+          title: "Bookings",
+          url: "/analytics/insights",
+        },
+      ],
     },
     {
-      title: "Projects",
+      title: "Food Court",
+      url: "#",
+      icon: IconChartBar,
+      items: [
+        {
+          title: "Food Court media",
+          url: "/analytics/overview",
+        },
+        {
+          title: "Add Event",
+          url: "/analytics/reports",
+        },
+        {
+          title: "Bookings",
+          url: "/analytics/insights",
+        },
+      ],
+    },
+    {
+      title: "Bakery",
       url: "#",
       icon: IconFolder,
+      items: [
+        {
+          title: "Bakery Media",
+          url: "/projects/gallery",
+        },
+      ],
     },
   ],
 };
@@ -78,7 +116,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   );

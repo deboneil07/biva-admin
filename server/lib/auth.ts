@@ -8,10 +8,10 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
-      user: user,
-      account: account,
-      session: session,
-      verification: verification,
+      user,
+      account,
+      session,
+      verification,
     },
   }),
   emailAndPassword: {
@@ -25,18 +25,14 @@ export const auth = betterAuth({
         defaultValue: "employee",
       },
     },
-    // roles: {
-    //     admin: 'admin',
-    //     employee: 'employee',
-    //     'media-handler': 'media-handler',
-    // }
   },
+  trustedOrigins: ["http://localhost:5173"],
   session: {
     cookieCache: {
       enabled: true,
-      maxAge: 60 * 5,
+      maxAge: 60 * 5, // 5 minute
     },
-    expiresIn: 60 * 60 * 24,
+    expiresIn: 60 * 60 * 24, // 1 day"
   },
   plugins: [
     admin({
