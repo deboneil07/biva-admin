@@ -57,7 +57,7 @@ const data = {
         },
         {
           title: "Bookings",
-          url: "/analytics/insights",
+          url: "/hotel/bookings",
         },
       ],
     },
@@ -75,8 +75,12 @@ const data = {
           url: "/analytics/reports",
         },
         {
-          title: "Bookings",
-          url: "/analytics/insights",
+          title: "Food Court Bookings",
+          url: "/foodcourt/bookings",
+        },
+        {
+          title: "Event Bookings",
+          url: "/foodcourt/event/bookings",
         },
       ],
     },
