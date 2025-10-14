@@ -62,7 +62,10 @@ export type TableDataType = {
   id: string;
   name: string;
   email: string;
+  phone: string;
   role: string;
+  image?: string;
+  aadhar_img_url?: string;
   createdAt?: string;
 }
 
@@ -70,7 +73,10 @@ export const schema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string(),
+  phone: z.string(),
   role: z.string(),
+  image: z.string().optional(),
+  aadhar_img_url: z.string().optional(),
   createdAt: z.string().optional(),
 });
 
@@ -113,6 +119,15 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     cell: ({ row }) => (
       <div className="text-sm">
         {row.original.email}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "phone",
+    header: "Phone",
+    cell: ({ row }) => (
+      <div className="text-sm">
+        {row.original.phone}
       </div>
     ),
   },
@@ -164,6 +179,8 @@ import { Spinner } from "./ui/spinner";
 import { toast } from "sonner";
 import TableActionDelete from "./table-action-delete";
 import { getRoles } from "@/utils/get-roles";
+import { useUserStore } from "@/store/user-store";
+import useUser from "@/hooks/useUser";
 
 export function DataTable({
   data: initialData,
@@ -176,6 +193,11 @@ export function DataTable({
 }) {
   const [data, setData] = React.useState(() => initialData?.data || initialData || []);
   const [rowSelection, setRowSelection] = React.useState({});
+  
+  // User store integration
+  const { id: selectedUserIds, count, updateStore } = useUserStore();
+
+  const {deleteUser} = useUser();
 
   // Update data when initialData changes
   React.useEffect(() => {
@@ -193,7 +215,6 @@ export function DataTable({
     }
   }, [error]);
 
-
   const table = useReactTable({
     data,
     columns,
@@ -208,6 +229,34 @@ export function DataTable({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
+  // Sync row selection with user store (moved after table declaration)
+  React.useEffect(() => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const selectedIds = selectedRows.map(row => row.original.id);
+    
+    updateStore({ 
+      id: selectedIds, 
+      count: selectedIds.length 
+    });
+  }, [rowSelection, updateStore, table]);
+
+  // Handle bulk delete
+  const handleBulkDelete = async () => {
+    if (selectedUserIds.length === 0) return;
+    
+    try {
+      await deleteUser({ id: selectedUserIds });
+      toast.success(`Successfully deleted ${selectedUserIds.length} user(s)`);
+      
+      // Clear selection after successful delete
+      setRowSelection({});
+      updateStore({ id: [], count: 0 });
+    } catch (error) {
+      toast.error("Failed to delete users");
+      console.error("Bulk delete error:", error);
+    }
+  };
+
   return (
     <Tabs
       defaultValue="outline"
@@ -217,8 +266,27 @@ export function DataTable({
         <div>
           <h1 className="text-5xl font-bold">Team Sheet</h1>
         </div>
+        
         <div className="flex items-center gap-2">
-            <AddUser />
+          {/* Regular AddUser button - always visible */}
+      <AddUser />
+          
+     
+          {count > 0 && (
+            <>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={handleBulkDelete}
+                className="flex items-center gap-2"
+              >
+                <IconTrash className="h-4 w-4" />
+                Delete ({count})
+              </Button>
+
+
+            </>
+          )}
         </div>
       </div>
 
@@ -319,9 +387,28 @@ function TableCellViewer({
   triggerButton?: React.ReactNode;
 }) {
   const isMobile = useIsMobile();
+  const { editUser, isEditingUserPending } = useUser();
+  const [selectedRole, setSelectedRole] = React.useState(item.role);
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const handleUpdateRole = async () => {
+    if (selectedRole === item.role) {
+      toast.info("No changes to save");
+      return;
+    }
+
+    try {
+      await editUser({ id: item.id, role: selectedRole });
+      toast.success("User role updated successfully!");
+      setIsOpen(false);
+    } catch (error) {
+      toast.error("Failed to update user role");
+      console.error("Update role error:", error);
+    }
+  };
 
   return (
-    <Drawer direction={isMobile ? "bottom" : "right"}>
+    <Drawer direction={isMobile ? "bottom" : "right"} open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
         {triggerButton || (
           <Button variant="link" className="text-foreground w-fit px-0 text-left">
@@ -331,21 +418,57 @@ function TableCellViewer({
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="gap-1">
-          <DrawerTitle>{item.name}</DrawerTitle>
+          <DrawerTitle>Edit User - {item.name}</DrawerTitle>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
+          {/* User Images Section */}
+          <div className="grid gap-4">
+            {item.image && (
+              <div className="flex flex-col gap-2">
+                <Label>Profile Image</Label>
+                <div className="w-20 h-20 rounded-lg overflow-hidden border">
+                  <img 
+                    src={item.image} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            )}
+            
+            {item.aadhar_img_url && (
+              <div className="flex flex-col gap-2">
+                <Label>Aadhar/PAN Image</Label>
+                <div className="w-32 h-20 rounded-lg overflow-hidden border">
+                  <img 
+                    src={item.aadhar_img_url} 
+                    alt="Aadhar/PAN" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           <form className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
               <Label htmlFor="name">Name</Label>
-              <Input id="name" defaultValue={item.name} />
+              <Input id="name" defaultValue={item.name} disabled className="bg-muted" />
+              <span className="text-xs text-muted-foreground">Name cannot be changed</span>
             </div>
             <div className="flex flex-col gap-3">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" defaultValue={item.email} />
+              <Input id="email" type="email" defaultValue={item.email} disabled className="bg-muted" />
+              <span className="text-xs text-muted-foreground">Email cannot be changed</span>
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="role">Role</Label>
-              <Select defaultValue={item.role}>
+              <Label htmlFor="phone">Phone</Label>
+              <Input id="phone" type="tel" defaultValue={item.phone} disabled className="bg-muted" />
+              <span className="text-xs text-muted-foreground">Phone cannot be changed</span>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label htmlFor="role">Role *</Label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
                 <SelectTrigger id="role" className="w-full">
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
@@ -355,15 +478,31 @@ function TableCellViewer({
                   <SelectItem value="media-handler">Media Handler</SelectItem>
                 </SelectContent>
               </Select>
+              <span className="text-xs text-green-600">✓ This field can be updated</span>
             </div>
             <div className="flex flex-col gap-3">
               <Label htmlFor="id">User ID</Label>
-              <Input id="id" defaultValue={item.id} disabled className="font-mono text-xs" />
+              <Input id="id" defaultValue={item.id} disabled className="font-mono text-xs bg-muted" />
             </div>
           </form>
         </div>
-        <DrawerFooter>
-          <Button>Submit</Button>
+        <DrawerFooter className="flex flex-row gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsOpen(false)}
+            disabled={isEditingUserPending}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleUpdateRole}
+            disabled={isEditingUserPending || selectedRole === item.role}
+            className="flex-1"
+          >
+            {isEditingUserPending && <Spinner className="mr-2 h-4 w-4" />}
+            {selectedRole === item.role ? "No Changes" : "Update Role"}
+          </Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

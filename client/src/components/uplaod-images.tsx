@@ -13,8 +13,19 @@ import { Spinner } from "./ui/spinner";
 import { Image } from "lucide-react";
 import { Input } from "./ui/input";
 
+interface UploadImageProps {
+    onFileSelect?: (file: File | null) => void;
+    label?: string;
+    required?: boolean;
+    disabled?: boolean;
+}
 
-export function UploadImage() {
+export function UploadImage({ 
+    onFileSelect, 
+    label = "Upload a File",
+    required = false,
+    disabled = false 
+}: UploadImageProps) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [file, setFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -27,6 +38,7 @@ export function UploadImage() {
         setFile(selectedFile);
         setPreviewUrl(URL.createObjectURL(selectedFile));
         simulateUpload();
+        onFileSelect?.(selectedFile); // Call parent callback
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,6 +64,7 @@ export function UploadImage() {
         setFile(null);
         setPreviewUrl(null);
         if (inputRef.current) inputRef.current.value = "";
+        onFileSelect?.(null); // Notify parent of file removal
     };
 
 
@@ -82,15 +95,16 @@ export function UploadImage() {
                     <EmptyMedia variant="icon">
                         <Image />
                     </EmptyMedia>
-                    <EmptyTitle>Upload a File</EmptyTitle>
+                    <EmptyTitle>{label}{required && " *"}</EmptyTitle>
                     <EmptyDescription>
                         Drag & drop or{" "}
                         <Button
                             asChild
                             variant="link"
                             className="p-0 h-auto text-blue-600 font-medium underline hover:text-blue-500"
+                            disabled={disabled}
                         >
-                            <span onClick={handleButtonClick} className="hover:cursor-pointer">select a file</span>
+                            <span onClick={disabled ? undefined : handleButtonClick} className={disabled ? "cursor-not-allowed" : "hover:cursor-pointer"}>select a file</span>
                         </Button>{" "}
                         to upload.
                     </EmptyDescription>
@@ -133,7 +147,7 @@ export function UploadImage() {
                         variant="outline"
                         size="sm"
                         onClick={handleButtonClick}
-                        disabled={uploading}
+                        disabled={uploading || disabled}
                         className="w-full"
                     >
                         {uploading && <Spinner className="mr-2" />}

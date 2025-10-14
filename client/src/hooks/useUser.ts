@@ -5,16 +5,22 @@ async function getUserApi() {
   return await instance.get("/admin/get-users");
 }
 
-async function createUserApi({ name, email, password, role }: { name: string; email: string; password: string; role: string }) {
-  return await instance.post("/admin/create-user", { name, email, password, role });
+async function createUserApi(formData: FormData) {
+  return await instance.post("/admin/create-user", formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 }
 
 async function editUserApi({ id, role }: { id: string; role: string }) {
-  return await instance.post("/admin/edit-roles", { userId: id, newRole: role });
+  return await instance.put("/admin/edit-roles", { userId: id, newRole: role });
 }
 
-async function deleteUserApi({ id }: { id: string }) {
-  return await instance.delete(`/admin/delete-user/${id}`);
+async function deleteUserApi({ id }: { id: string[] }) {
+  return await instance.delete("/admin/delete-user", {
+    data: { userIds: id }
+  });
 }
 
 export default function useUser() {
