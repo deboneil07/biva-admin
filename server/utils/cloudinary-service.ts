@@ -36,6 +36,19 @@ export class CloudinaryService {
     });
   }
 
+  private getOptimizedUrl(resource: any): string {
+    const isVideo = resource.resource_type === "video";
+    const format = "auto"; // WebP or WebM automatically chosen
+    const quality = "auto";
+
+    return Cloudinary.url(resource.public_id, {
+      resource_type: resource.resource_type,
+      format,
+      quality,
+      secure: true,
+    });
+  }
+
   async listImages(folderPrefix = "", dynamicMode = false): Promise<any[]> {
     let resources: any[] = [];
     let nextCursor: string | undefined = undefined;
@@ -54,7 +67,10 @@ export class CloudinaryService {
       } while (nextCursor);
     }
 
-    return resources;
+    return resources.map((res) => ({
+      ...res,
+      optimized_url: this.getOptimizedUrl(res),
+    }));
   }
 
   async listImagesByTags(tags: string[]): Promise<any> {
@@ -68,8 +84,11 @@ export class CloudinaryService {
         .with_field("context")
         .max_results(100)
         .execute();
-      return result.resources;
-    } catch (error) {
+      return result.resources.map((res) => ({
+        ...res,
+        optimized_url: this.getOptimizedUrl(res),
+      }));
+    } catch (error: any) {
       console.error("Error fetching images by tags:", error);
       return [];
     }
@@ -137,7 +156,7 @@ export class CloudinaryService {
     const uploadOpts: Record<string, any> = {
       resource_type,
       folder,
-      fetch_format:
+      format:
         resource_type === "image"
           ? "webp"
           : resource_type === "video"
