@@ -47,7 +47,7 @@ adminRouter.post(
           500,
         );
       }
-      aadharImageUrl = uploadedAadhar.secure_url;
+      aadharImageUrl = uploadedAadhar.optimized_url;
 
       const mainImageFile = parsedBody.image;
 
@@ -56,7 +56,7 @@ adminRouter.post(
           await uploadImage(mainImageFile, "adminEmployeeImages");
 
         if (uploadedMainImage?.secure_url) {
-          mainImageUrl = uploadedMainImage.secure_url;
+          mainImageUrl = uploadedMainImage.optimized_url;
         } else {
           console.warn(
             "Main profile image upload failed. Proceeding with null URL.",

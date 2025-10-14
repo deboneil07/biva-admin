@@ -14,6 +14,7 @@ export type UploadFileResult = {
   mime_type?: string | null;
   original_filename?: string | null;
   raw?: UploadApiResponse;
+  optimized_url?: string;
 };
 
 export type UploadOptions = {
