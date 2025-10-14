@@ -39,7 +39,7 @@ export class CloudinaryService {
 
   private getOptimizedUrl(resource: any): string {
     const isVideo = resource.resource_type === "video";
-    const format = "auto"; // WebP or WebM automatically chosen
+    const format = "auto";
     const quality = "auto";
 
     return Cloudinary.url(resource.public_id, {
@@ -157,12 +157,6 @@ export class CloudinaryService {
     const uploadOpts: Record<string, any> = {
       resource_type,
       folder,
-      format:
-        resource_type === "image"
-          ? "webp"
-          : resource_type === "video"
-            ? "webm"
-            : "auto",
     };
 
     if (public_id) uploadOpts.public_id = public_id;
@@ -222,6 +216,7 @@ export class CloudinaryService {
       mime_type: detectedMime ?? (result.format ? `${result.format}` : null),
       original_filename: result.original_filename ?? originalName ?? null,
       raw: result,
+      optimized_url: this.getOptimizedUrl(result),
     };
     return out;
   }
