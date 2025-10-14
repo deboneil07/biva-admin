@@ -13,7 +13,7 @@ export const getBookingsRouter = new Hono();
 getBookingsRouter.get(
   "/hotel",
   isAuthenticated,
-  hasRole(["employee"]),
+  hasRole(["employee", "admin"]),
   async (c: Context) => {
     const result = await db
       .select({
@@ -32,13 +32,14 @@ getBookingsRouter.get(
       })
       .from(hotelRoomReservation)
       .orderBy(desc(hotelRoomReservation.createdAt));
+    return c.json({data: result}, 200)
   },
 );
 
 getBookingsRouter.get(
   "/food-court",
   isAuthenticated,
-  hasRole(["employee"]),
+  hasRole(["employee", "admin"]),
   async (c: Context) => {
     const result = await db
       .select({
@@ -57,13 +58,15 @@ getBookingsRouter.get(
       })
       .from(foodCourtTable)
       .orderBy(desc(foodCourtTable.createdAt));
+    return c.json({data: result}, 200)
   },
+
 );
 
 getBookingsRouter.get(
   "/events",
   isAuthenticated,
-  hasRole(["employee"]),
+  hasRole(["employee", "admin"]),
   async (c: Context) => {
     const result = await db
       .select({
@@ -82,5 +85,6 @@ getBookingsRouter.get(
       })
       .from(foodCourtEventTable)
       .orderBy(desc(foodCourtEventTable.createdAt));
+    return c.json({data: result}, 200)
   },
 );

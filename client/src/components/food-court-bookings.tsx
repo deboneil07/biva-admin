@@ -61,31 +61,31 @@ import { Eye } from "lucide-react";
 export type TableDataType = {
   id: number;
   name: string;
-  total_people: number;
-  status: string;
+  email: string;
+  food_preferences: string;
+  time_slot: string;
   aadhar_or_pan_img_url: string;
   phone_number: string;
-  email: string;
-  food_preference: string;
-  timeSlot: string;
+  total_people: number;
   paid: boolean;
-  totalAmount: number;
-  createdAt: string;
+  total_amount: number;
+  created_at: string;
+  status: string;
 }
 
 export const schema = z.object({
   id: z.number(),
   name: z.string(),
-  total_people: z.number(),
-  status: z.string(),
+  email: z.string(),
+  food_preferences: z.string(),
+  time_slot: z.string(),
   aadhar_or_pan_img_url: z.string(),
   phone_number: z.string(),
-  email: z.string(),
-  food_preference: z.string(),
-  timeSlot: z.string(),
+  total_people: z.number(),
   paid: z.boolean(),
-  totalAmount: z.number(),
-  createdAt: z.string(),
+  total_amount: z.number(),
+  created_at: z.string(),
+  status: z.string(),
 });
 
 const columns: ColumnDef<z.infer<typeof schema>>[] = [
@@ -125,31 +125,31 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     ),
   },
   {
-    accessorKey: "timeSlot",
+    accessorKey: "time_slot",
     header: "Time Slot",
     cell: ({ row }) => (
       <div className="text-sm font-medium">
-        {row.original.timeSlot}
+        {row.original.time_slot}
       </div>
     ),
   },
   {
-    accessorKey: "food_preference",
+    accessorKey: "food_preferences",
     header: "Food Preference",
     cell: ({ row }) => {
-      const preference = row.original.food_preference;
+      const preference = row.original.food_preferences;
       return (
         <div className="w-16">
           <Badge 
             variant="outline"
             className={`px-2 py-1 text-xs font-medium ${
-              preference === "veg" ? "bg-green-100 text-green-800" : 
-              preference === "non-veg" ? "bg-red-100 text-red-800" :
+              preference === "Veg" ? "bg-green-100 text-green-800" : 
+              preference === "Non-Veg" ? "bg-red-100 text-red-800" :
               "bg-yellow-100 text-yellow-800"
             }`}
           >
-            {preference === "veg" ? "Veg" : 
-             preference === "non-veg" ? "Non-Veg" : 
+            {preference === "Veg" ? "Veg" : 
+             preference === "Non-Veg" ? "Non-Veg" : 
              "Both"}
           </Badge>
         </div>
@@ -178,11 +178,11 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     },
   },
   {
-    accessorKey: "totalAmount",
+    accessorKey: "total_amount",
     header: "Amount",
     cell: ({ row }) => (
       <div className="text-sm font-medium">
-        ₹{row.original.totalAmount.toLocaleString()}
+        ₹{row.original.total_amount.toLocaleString()}
       </div>
     ),
   },
@@ -420,14 +420,14 @@ function TableCellViewer({
                 <Input id="total_people" type="number" defaultValue={item.total_people} disabled className="bg-muted" />
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="timeSlot">Time Slot</Label>
-                <Input id="timeSlot" defaultValue={item.timeSlot} disabled className="bg-muted" />
+                <Label htmlFor="time_slot">Time Slot</Label>
+                <Input id="time_slot" defaultValue={item.time_slot} disabled className="bg-muted" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="food_preference">Food Preference</Label>
-                <Input id="food_preference" defaultValue={item.food_preference} disabled className="bg-muted" />
+                <Label htmlFor="food_preferences">Food Preference</Label>
+                <Input id="food_preferences" defaultValue={item.food_preferences} disabled className="bg-muted" />
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="status">Table Status</Label>
@@ -436,7 +436,7 @@ function TableCellViewer({
             </div>
             <div className="flex flex-col gap-3">
               <Label htmlFor="amount">Total Amount</Label>
-              <Input id="amount" defaultValue={`₹${item.totalAmount.toLocaleString()}`} disabled className="bg-muted" />
+              <Input id="amount" defaultValue={`₹${item.total_amount.toLocaleString()}`} disabled className="bg-muted" />
             </div>
             <div className="flex flex-col gap-3">
               <Label htmlFor="paid">Payment Status</Label>
@@ -444,7 +444,7 @@ function TableCellViewer({
             </div>
             <div className="flex flex-col gap-3">
               <Label htmlFor="created">Created At</Label>
-              <Input id="created" defaultValue={new Date(item.createdAt).toLocaleString()} disabled className="bg-muted" />
+              <Input id="created" defaultValue={new Date(item.created_at).toLocaleString()} disabled className="bg-muted" />
             </div>
           </div>
         </div>
@@ -467,29 +467,29 @@ export const sampleFoodCourtBookings: TableDataType[] = [
   {
     id: 1,
     name: "Amit Patel",
-    total_people: 4,
-    status: "occupied",
+    email: "amit.patel@email.com",
+    food_preferences: "veg",
+    time_slot: "12:00-14:00",
     aadhar_or_pan_img_url: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop",
     phone_number: "+91-9876543210",
-    email: "amit.patel@email.com",
-    food_preference: "veg",
-    timeSlot: "12:00-14:00",
+    total_people: 4,
     paid: true,
-    totalAmount: 1800,
-    createdAt: "2024-10-12T11:30:00Z"
+    total_amount: 1800,
+    created_at: "2024-10-12T11:30:00Z",
+    status: "occupied"
   },
   {
     id: 2,
     name: "Sneha Reddy",
-    total_people: 2,
-    status: "available",
+    email: "sneha.reddy@gmail.com",
+    food_preferences: "non-veg",
+    time_slot: "19:00-21:00",
     aadhar_or_pan_img_url: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
     phone_number: "+91-8765432109",
-    email: "sneha.reddy@gmail.com",
-    food_preference: "non-veg",
-    timeSlot: "19:00-21:00",
+    total_people: 2,
     paid: false,
-    totalAmount: 1200,
-    createdAt: "2024-10-13T16:45:00Z"
+    total_amount: 1200,
+    created_at: "2024-10-13T16:45:00Z",
+    status: "available"
   }
 ];

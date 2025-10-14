@@ -13,8 +13,11 @@ import { UploadImage } from "./components/uplaod-images";
 import ImageCard from "./components/gallery-image-card";
 import Gallery from "./components/gallery";
 import { HotelBookings,  sampleHotelBookings } from "./components/hotel-bookings";
-import { FoodCourtBookings, sampleFoodCourtBookings } from "./components/food-court-bookings";
+
 import { FoodCourtEventBookings, sampleFoodCourtEventBookings } from "./components/food-court-event-bookings";
+import FoodCourtBookingsPage from "./pages/food-court-booking";
+import FoodCourtEventBookingsPage from "./pages/food-court-event-bookings";
+import HotelBookingsPage from "./pages/hotel-booking";
 
 export const queryClient = new QueryClient({
   defaultOptions:{
@@ -38,9 +41,9 @@ function App() {
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/team" element={<Team />} />
-          <Route path="/hotel/bookings" element={<HotelBookings data={sampleHotelBookings} isLoading={false} />}/>
-          <Route path="/foodcourt/bookings" element={<FoodCourtBookings data={sampleFoodCourtBookings} isLoading={false} />}/> 
-          <Route path="/foodcourt/event/bookings" element={<FoodCourtEventBookings data={sampleFoodCourtEventBookings} isLoading={false}/> }/> 
+          <Route path="/hotel/bookings" element={<HotelBookingsPage />}/>
+          <Route path="/foodcourt/bookings" element={<FoodCourtBookingsPage />}/> 
+          <Route path="/foodcourt/event/bookings" element={<FoodCourtEventBookingsPage />}/> 
           <Route path="projects/upload" element={<Gallery />} />
         </Route>
       </Routes>

@@ -7,7 +7,7 @@ async function getFoodCourtEventBookings() {
 }
 
 
-export default function useHotelBookings() {
+export default function useFoodCourtEventBookings() {
     const foodCourtEventBookingQuery = useQuery({
         queryKey: ["get-food-court-event-bookings"],
         queryFn: getFoodCourtEventBookings,

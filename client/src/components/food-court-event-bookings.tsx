@@ -60,37 +60,37 @@ import { Eye } from "lucide-react";
 
 export type TableDataType = {
   id: number;
-  eventId: string;
-  table_id: string[];
   name: string;
   email: string;
-  status: string;
   aadhar_or_pan_img_url: string;
   phone_number: string;
   total_people: number;
+  table_id: string[];
+  event_id: string;
   paid: boolean;
   total_amount: number;
-  createdAt: string;
+  created_at: string;
+  status: string;
 }
 
 export const schema = z.object({
   id: z.number(),
-  eventId: z.string(),
-  table_id: z.array(z.string()),
   name: z.string(),
   email: z.string(),
-  status: z.string(),
   aadhar_or_pan_img_url: z.string(),
   phone_number: z.string(),
   total_people: z.number(),
+  table_id: z.array(z.string()),
+  event_id: z.string(),
   paid: z.boolean(),
   total_amount: z.number(),
-  createdAt: z.string(),
+  created_at: z.string(),
+  status: z.string(),
 });
 
 const columns: ColumnDef<z.infer<typeof schema>>[] = [
   {
-    accessorKey: "eventId",
+    accessorKey: "event_id",
     header: "Event ID",
     cell: ({ row }) => {
       return <TableCellViewer item={row.original} />;
@@ -361,7 +361,7 @@ function TableCellViewer({
       <DrawerTrigger asChild>
         {triggerButton || (
           <Button variant="link" className="text-foreground w-fit px-0 text-left">
-            {item.eventId}
+            {item.event_id}
           </Button>
         )}
       </DrawerTrigger>
@@ -390,8 +390,8 @@ function TableCellViewer({
               <Input id="id" defaultValue={item.id.toString()} disabled className="font-mono text-xs bg-muted" />
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="eventId">Event ID</Label>
-              <Input id="eventId" defaultValue={item.eventId} disabled className="font-mono text-xs bg-muted" />
+              <Label htmlFor="event_id">Event ID</Label>
+              <Input id="event_id" defaultValue={item.event_id} disabled className="font-mono text-xs bg-muted" />
             </div>
             <div className="flex flex-col gap-3">
               <Label htmlFor="name">Customer Name</Label>
@@ -429,7 +429,7 @@ function TableCellViewer({
             </div>
             <div className="flex flex-col gap-3">
               <Label htmlFor="created">Created At</Label>
-              <Input id="created" defaultValue={new Date(item.createdAt).toLocaleString()} disabled className="bg-muted" />
+              <Input id="created" defaultValue={new Date(item.created_at).toLocaleString()} disabled className="bg-muted" />
             </div>
           </div>
         </div>
@@ -451,30 +451,30 @@ function TableCellViewer({
 export const sampleFoodCourtEventBookings: TableDataType[] = [
   {
     id: 1,
-    eventId: "EVT-2024-DIWALI-001",
-    table_id: ["T001", "T002", "T003"],
     name: "Rahul Sharma",
     email: "rahul.sharma@email.com",
-    status: "reserved",
     aadhar_or_pan_img_url: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop",
     phone_number: "+91-9876543210",
     total_people: 12,
+    table_id: ["T001", "T002", "T003"],
+    event_id: "EVT-2024-DIWALI-001",
     paid: true,
     total_amount: 8500,
-    createdAt: "2024-10-12T10:00:00Z"
+    created_at: "2024-10-12T10:00:00Z",
+    status: "reserved"
   },
   {
     id: 2,
-    eventId: "EVT-2024-BIRTHDAY-002",
-    table_id: ["T005"],
     name: "Anita Desai",
     email: "anita.desai@gmail.com",
-    status: "available",
     aadhar_or_pan_img_url: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
     phone_number: "+91-8765432109",
     total_people: 6,
+    table_id: ["T005"],
+    event_id: "EVT-2024-BIRTHDAY-002",
     paid: false,
     total_amount: 4200,
-    createdAt: "2024-10-13T14:30:00Z"
+    created_at: "2024-10-13T14:30:00Z",
+    status: "available"
   }
 ];

@@ -5,10 +5,6 @@ import { useMemo, useEffect, useRef } from "react";
 export default function Team() {
   const { data, error, isFetching } = useUser();
 
-  
-
-
-
   const users = useMemo(() => {
    
     return data?.data?.users ?? [];
