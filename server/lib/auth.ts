@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db";
-import { account, session, user, verification } from "../db/auth-schema";
+import { account, session, user, verification } from "../db/auth-schema.ts";
 import { admin } from "better-auth/plugins";
 
 export const auth = betterAuth({
@@ -23,6 +23,14 @@ export const auth = betterAuth({
       role: {
         type: ["admin", "employee", "media-handler"],
         defaultValue: "employee",
+      },
+      phone: {
+        type: "string",
+        defaultValue: "",
+      },
+      aadhar_img_url: {
+        type: "string",
+        defaultValue: "",
       },
     },
   },

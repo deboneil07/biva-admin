@@ -36,6 +36,27 @@ export class CloudinaryService {
     });
   }
 
+  async listImages(folderPrefix = "", dynamicMode = false): Promise<any[]> {
+    let resources: any[] = [];
+    let nextCursor: string | undefined = undefined;
+
+    if (dynamicMode) {
+      do {
+        const response: any = await Cloudinary.api.resources_by_asset_folder(
+          folderPrefix,
+          {
+            max_results: 500,
+            next_cursor: nextCursor,
+          },
+        );
+        resources.push(...(response.resources || []));
+        nextCursor = response.next_cursor;
+      } while (nextCursor);
+    }
+
+    return resources;
+  }
+
   async listImagesByTags(tags: string[]): Promise<any> {
     try {
       const tagsExpression = tags.map((tag) => `${tag}`).join(" OR ");
