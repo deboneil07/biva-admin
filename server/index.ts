@@ -4,6 +4,7 @@ import adminSignupRouter from "./temp-admin";
 import { cors } from "hono/cors";
 import { adminRouter } from "./controller/adminRouter";
 import { serve } from "bun";
+import { getBookingsRouter } from "./controller/getBookings";
 
 const app = new Hono();
 app.use(
@@ -18,6 +19,7 @@ app.use(
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 // app.route("/dev", adminSignupRouter);
 app.route("/admin", adminRouter);
+app.route("/get-bookings", getBookingsRouter);
 
 serve({
   fetch: app.fetch,

@@ -38,15 +38,10 @@ export class CloudinaryService {
   }
 
   private getOptimizedUrl(resource: any): string {
-    const isVideo = resource.resource_type === "video";
-    const format = "auto";
-    const quality = "auto";
-
     return Cloudinary.url(resource.public_id, {
       resource_type: resource.resource_type,
-      format,
-      quality,
       secure: true,
+      transformation: [{ fetch_format: "auto", quality: "auto" }],
     });
   }
 
