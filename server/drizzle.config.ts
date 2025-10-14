@@ -8,3 +8,4 @@ export default defineConfig({
     url: process.env.NEON_PG_URL!,
   },
 });
+
