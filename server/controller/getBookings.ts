@@ -32,7 +32,7 @@ getBookingsRouter.get(
       })
       .from(hotelRoomReservation)
       .orderBy(desc(hotelRoomReservation.createdAt));
-    return c.json({data: result}, 200)
+    return c.json({ data: result }, 200);
   },
 );
 
@@ -58,9 +58,8 @@ getBookingsRouter.get(
       })
       .from(foodCourtTable)
       .orderBy(desc(foodCourtTable.createdAt));
-    return c.json({data: result}, 200)
+    return c.json({ data: result }, 200);
   },
-
 );
 
 getBookingsRouter.get(
@@ -85,6 +84,6 @@ getBookingsRouter.get(
       })
       .from(foodCourtEventTable)
       .orderBy(desc(foodCourtEventTable.createdAt));
-    return c.json({data: result}, 200)
+    return c.json({ data: result }, 200);
   },
 );

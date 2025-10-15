@@ -90,6 +90,31 @@ export class CloudinaryService {
     }
   }
 
+  async listByMetadata(
+    metadataKey: string,
+    metadataValue?: string,
+  ): Promise<any[]> {
+    try {
+      const expr = metadataValue
+        ? `context.${metadataKey}=${metadataValue}`
+        : `context.${metadataKey}`;
+
+      const res = await Cloudinary.search
+        .expression(expr)
+        .with_field("context")
+        .max_results(100)
+        .execute();
+
+      return res.resources.map((res) => ({
+        ...res,
+        optimized_url: this.getOptimizedUrl(res),
+      }));
+    } catch (err: any) {
+      console.error("Error fetching metadata ", err.message);
+      return [];
+    }
+  }
+
   async uploadMedia(
     source: File | Buffer | ArrayBuffer | Uint8Array | string,
     options: UploadOptions = {},

@@ -5,6 +5,7 @@ import { cors } from "hono/cors";
 import { adminRouter } from "./controller/adminRouter";
 import { serve } from "bun";
 import { getBookingsRouter } from "./controller/getBookings";
+import { getImage } from "./controller/imageController";
 
 const app = new Hono();
 app.use(
@@ -19,6 +20,7 @@ app.use(
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 // app.route("/dev", adminSignupRouter);
 app.route("/admin", adminRouter);
+app.get("/get-media/:folder", getImage);
 app.route("/get-bookings", getBookingsRouter);
 
 serve({

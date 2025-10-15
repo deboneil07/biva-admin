@@ -4,18 +4,7 @@ import {
   type UploadFileResult,
 } from "../utils/cloudinary-service.ts";
 
-const MAX_BYTES = 5 * 1024 * 1024;
-
 const cloudService = new CloudinaryService();
-
-const roomTypes = [
-  "suite_room",
-  "executive_room",
-  "studio_room",
-  "deluxe_room",
-  "super_deluxe_room",
-  "twin_room",
-];
 
 type BakeryItem = {
   title: string;
@@ -38,130 +27,139 @@ type GroupedRooms = {
   url: string;
   desc: string;
   price: string;
-  tag: string;
+  room_id: string | undefined;
+};
+
+type HotelHero = {
+  public_id: string;
+  url: string;
+  position: string;
 };
 
 export const getImage = async (c: Context) => {
   try {
-    const param = c.req.param("folder") || "";
+    const param = (c.req.param("folder") || "").toLowerCase();
 
-    if (param.toLowerCase().includes("hotel")) {
-      const hotelHero = await cloudService.listImages("hotel-hero", true);
-      const hotelEvents = await cloudService.listImages("events", true);
-      const hotelGallery = await cloudService.listImages("gallery", true);
+    // Helper: fetch all items with a context key "position"
+    const itemsWithPosition = await cloudService.listByMetadata("position");
 
-      const groupedRoom: GroupedRooms[] = [];
+    // Filter helper
+    const filterByPosition = (items: any[], position: string) => {
+      return items.filter((itm) => itm.context?.position === position);
+    };
 
-      const taggedImages = await cloudService.listImagesByTags(roomTypes);
-      console.log("Tagged images", taggedImages);
+    if (param.includes("hotel")) {
+      const heroItems = filterByPosition(itemsWithPosition, "hotel-hero");
+      const banquetItems = filterByPosition(itemsWithPosition, "banquet");
 
-      taggedImages.forEach((room) => {
-        const isTag = room.tags[0];
+      const hero: HotelHero[] = heroItems.map((itm) => ({
+        public_id: itm.public_id,
+        url: itm.secure_url,
+        position: itm.context.position,
+      }));
+      const banquet: HotelHero[] = banquetItems.map((itm) => ({
+        public_id: itm.public_id,
+        url: itm.secure_url,
+        position: itm.context.position,
+      }));
 
-        if (!isTag) {
-          return; // Skip if no tag
+      return c.json({
+        data: {
+          hero,
+          banquet,
+        },
+      });
+    } else if (param.includes("events")) {
+      const events = await cloudService.listImages("events", true);
+      return c.json({
+        events: events.map((img) => ({
+          event_id: img.context?.id,
+          price: img.context?.price,
+          name: img.context?.name,
+          group_name: img.context?.group_name,
+          date: img.context?.date,
+          time: img.context?.time,
+          public_id: img.public_id,
+          url: img.secure_url,
+        })),
+      });
+    } else if (param.includes("gallery")) {
+      const gallery = await cloudService.listImages("gallery", true);
+      return c.json({
+        gallery: gallery.map((img) => ({
+          public_id: img.public_id,
+          url: img.secure_url,
+        })),
+      });
+    } else if (param.includes("food-court")) {
+      const foodCourtItems = await cloudService.listImages("food-court", true);
+      const heroItems = filterByPosition(foodCourtItems, "food-court-hero");
+
+      const hero: HotelHero[] = heroItems.map((itm) => ({
+        public_id: itm.public_id,
+        url: itm.secure_url,
+        position: itm.context.position,
+      }));
+
+      const preferences: { public_id: string; url: string; name: string }[] =
+        [];
+
+      foodCourtItems.forEach((itm) => {
+        if (itm.context?.position === "preference") {
+          const name = itm.context.name;
+          if (name && (name === "veg" || name === "non-veg")) {
+            preferences.push({
+              public_id: itm.public_id,
+              url: itm.secure_url,
+              name,
+            });
+          }
         }
-
-        const desc =
-          room.context && room.context.alt
-            ? room.context.alt
-            : "description not available";
-        const price =
-          room.context && room.context.Price
-            ? room.context.Price
-            : "no price available";
-
-        groupedRoom.push({
-          public_id: room.public_id,
-          url: room.secure_url,
-          desc: desc,
-          price: price,
-          tag: isTag,
-        });
       });
-
-      console.log("gp", groupedRoom);
 
       return c.json({
         data: {
-          hero: hotelHero.map((img) => ({
-            public_id: img.public_id,
-            url: img.secure_url,
-          })),
-          events: hotelEvents.map((img) => ({
-            public_id: img.public_id,
-            url: img.secure_url,
-          })),
-          gallery: hotelGallery.map((img) => ({
-            public_id: img.public_id,
-            url: img.secure_url,
-          })),
-          rooms: groupedRoom,
+          hero,
+          preferences,
         },
       });
-    } else if (param.toLowerCase().includes("food-court")) {
-      const foodCourtHero = await cloudService.listImages(
-        "food-court-hero",
-        true,
-      );
-      // const foodCourtTables = await cloudService.listImages(
-      //   "food-court-tables",
-      //   true,
-      // ); // unused for now
+    } else if (param.includes("hotel-rooms")) {
+      const roomItems = await cloudService.listByMetadata("position");
+      const roomFiltered = filterByPosition(roomItems, "rooms");
 
-      const foodCourtEvents = await cloudService.listImages("events", true);
-      const foodCourtGallery = await cloudService.listImages("gallery", true);
+      const rooms: GroupedRooms[] = roomFiltered.map((itm) => ({
+        public_id: itm.public_id,
+        url: itm.secure_url,
+        desc: itm.context?.description ?? "description not available",
+        price: itm.context?.price ?? "no price available",
+        room_id: itm.context?.id,
+      }));
 
-      return c.json({
-        data: {
-          hero: foodCourtHero.map((img) => ({
-            public_id: img.public_id,
-            url: img.secure_url,
-          })),
-          events: foodCourtEvents.map((img) => ({
-            public_id: img.public_id,
-            url: img.secure_url,
-          })),
-          gallery: foodCourtGallery.map((img) => ({
-            public_id: img.public_id,
-            url: img.secure_url,
-          })),
-        },
-      });
-    } else if (param.toLowerCase().includes("bakery")) {
+      return c.json({ rooms });
+    } else if (param.includes("bakery")) {
       const bakeryImages = await cloudService.listImagesByTags(bakeryTypes);
       const groupedItems: GroupedBakeryItems = {
         bread: [],
         biscuit: [],
-        puff_and_snacks: [],
         rusk: [],
+        puff_and_snacks: [],
       };
 
-      bakeryImages.forEach((image) => {
-        const primaryTag =
-          image.tags && image.tags.length > 0 ? image.tags[0] : null;
-
+      bakeryImages.forEach((img) => {
+        const primaryTag = img.tags?.[0];
         if (!primaryTag || !bakeryTypes.includes(primaryTag)) {
-          console.log(`Skipping ${image.public_id}: Invalid or no tag found`);
           return;
         }
+        const desc = img.context?.alt ?? "Description not available";
 
-        const desc =
-          image.context && image.context.alt
-            ? image.context.alt
-            : "Description not available";
-
-        const item: BakeryItem = {
-          title: image.context.caption,
-          public_id: image.public_id,
-          desc: desc,
-          url: image.secure_url,
-        };
-
-        groupedItems[primaryTag as keyof GroupedBakeryItems].push(item);
+        groupedItems[primaryTag as keyof GroupedBakeryItems].push({
+          title: img.context?.caption ?? "",
+          public_id: img.public_id,
+          desc,
+          url: img.secure_url,
+        });
       });
 
-      console.log("Grouped Items:", groupedItems);
       return c.json({
         data: groupedItems,
       });
@@ -176,24 +174,26 @@ export const getImage = async (c: Context) => {
         },
       });
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error listing Cloudinary images:", error);
-    return c.json({ error: "Failed to fetch images" }, 500);
+    return c.json({ error: error.message }, 500);
   }
 };
 
 export const uploadImage = async (
   imgFile: File,
   folder: string,
+  context: Record<string, string>,
 ): Promise<UploadFileResult> => {
   try {
     const res = await cloudService.uploadMedia(imgFile, {
       maxSizeBytes: 3 * 1024 * 1024,
-      folder: folder,
+      folder,
+      context,
     });
-
     return res;
   } catch (err: any) {
-    throw new Error("Image upload Failed");
+    console.error("uploadImage error:", err);
+    throw new Error("Image upload failed");
   }
 };
