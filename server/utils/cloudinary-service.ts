@@ -92,12 +92,10 @@ export class CloudinaryService {
 
   async listByMetadata(
     metadataKey: string,
-    metadataValue?: string,
+    metadataValue: string,
   ): Promise<any[]> {
     try {
-      const expr = metadataValue
-        ? `context.${metadataKey}=${metadataValue}`
-        : `context.${metadataKey}`;
+      const expr = `context.${metadataKey}="${metadataValue}"`;
 
       const res = await Cloudinary.search
         .expression(expr)

@@ -180,16 +180,33 @@ export const getImage = async (c: Context) => {
   }
 };
 
-export const uploadImage = async (
-  imgFile: File,
-  folder: string,
-  context: Record<string, string>,
-): Promise<UploadFileResult> => {
+export const uploadImageVideoController = async (
+  c: Context,
+  // imgFile: File,
+  // folder: string,
+  // context: Record<string, string>,
+) => {
   try {
-    const res = await cloudService.uploadMedia(imgFile, {
+    const form = await c.req.parseBody();
+
+    const file = form["file"];
+    if (!file || !(file instanceof File)) {
+      return c.json({ error: "No file uploaded" }, 400);
+    }
+
+    const folder = form["folder"] as string;
+
+    const metadata: Record<any, any> = {};
+    for (const [key, value] of Object.entries(form)) {
+      if (key === "folder" || key === "file") continue;
+      if (typeof value === "string") {
+        metadata[key] = value;
+      }
+    }
+    const res = await cloudService.uploadMedia(file, {
       maxSizeBytes: 3 * 1024 * 1024,
       folder,
-      context,
+      context: metadata,
     });
     return res;
   } catch (err: any) {
