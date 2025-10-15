@@ -23,12 +23,37 @@ const ENDPOINT_MAP = {
   "/hotel/media": "hotel",
   "/foodcourt/media": "food-court", 
   "/bakery/media": "bakery",
+  "/hotel/rooms": "hotel-rooms",
+  "/events": "events"
 } as const;
 
 // Fetch function for TanStack Query
 async function fetchMediaData(endpoint: string): Promise<MediaApiResponse> {
-  const response = await instance.get(`/get-media/${endpoint}`);
-  return response.data?.data || {};
+  console.log("📡 Fetching media data for endpoint:", endpoint);
+  
+  try {
+    const response = await instance.get(`/get-media/${endpoint}`);
+    console.log("✅ Raw API response:", response);
+    console.log("📊 Response data:", response.data);
+    
+    // Handle different response structures
+    let extractedData: MediaApiResponse;
+    
+    if (response.data?.data) {
+      // Standard structure: { data: { hero: [...], preferences: [...] } }
+      extractedData = response.data.data;
+    } else {
+      // Direct structure: { rooms: [...] } or { hero: [...], preferences: [...] }
+      extractedData = response.data || {};
+    }
+    
+    console.log("🎯 Extracted data:", extractedData);
+    
+    return extractedData;
+  } catch (error) {
+    console.error("❌ API fetch error:", error);
+    throw error;
+  }
 }
 
 export function useMediaData(pathname: string) {
@@ -60,6 +85,14 @@ export function getItemsForProp(
     name: item.name || `${prop} image`,
     src: item.src || item.url || '/test.png',
   }));
+}
+
+// Helper function specifically for hotel rooms data
+export function getHotelRoomsData(data: MediaApiResponse | undefined) {
+  if (!data) return [];
+  
+  // Hotel rooms are returned directly as { rooms: [...] }
+  return data.rooms || [];
 }
 
 // Mutation hook for deleting media

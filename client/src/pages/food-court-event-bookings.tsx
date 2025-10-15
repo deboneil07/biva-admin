@@ -1,8 +1,6 @@
 
-import { FoodCourtBookings } from "@/components/food-court-bookings";
 import { FoodCourtEventBookings } from "@/components/food-court-event-bookings";
-import { HotelBookings } from "@/components/hotel-bookings";
-import useFoodCourtBookings from "@/hooks/useFoodCourtBookings";
+
 import useFoodCourtEventBookings from "@/hooks/useFoodCourtEventBookings";
 
 

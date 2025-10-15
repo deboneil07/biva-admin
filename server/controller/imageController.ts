@@ -128,7 +128,7 @@ export const getImage = async (c: Context) => {
     } else if (param.includes("hotel-rooms")) {
       const roomItems = await cloudService.listByMetadata("position", "rooms", param);
       // const roomFiltered = filterByPosition(roomItems, "rooms");
-
+      console.log("roomitems", roomItems)
       const rooms: GroupedRooms[] = roomItems.map((itm) => ({
         public_id: itm.public_id,
         url: itm.secure_url,

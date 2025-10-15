@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Upload } from "lucide-react"
-import { UploadFile } from "./uplaod-file"
+import { UploadFile } from "./upload-file"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { PROPS } from "@/data/image-props"
 import { useState } from "react"
@@ -32,6 +32,7 @@ const FOLDER_MAP = {
   "/hotel/media": "hotel",
   "/foodcourt/media": "food-court",
   "/bakery/media": "bakery",
+  "/hotel/rooms" : "hotel-rooms"
 } as const;
 
 export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
@@ -105,12 +106,6 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
       
       // Add the folder
       formData.append("folder", folder);
-      
-      // Add name field
-      const name = form.get("name") as string;
-      if (name) {
-        formData.append("name", name);
-      }
       
       console.log("🔧 Processing metadata fields:", fields);
 
@@ -268,7 +263,7 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
         <div key={index} className="flex gap-2">
           <Input 
             id={keyFieldId} 
-            name={`value-${index}`} 
+            name={`key-${index}`} 
             value={field.key} 
             disabled 
             className="bg-muted cursor-not-allowed flex-1"
@@ -308,17 +303,6 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
               </DialogHeader>
 
               <div className="grid gap-4">
-                {/* Name Field */}
-                <div className="grid gap-3">
-                  <Label htmlFor="name-1">Name *</Label>
-                  <Input 
-                    id="name-1" 
-                    name="name" 
-                    placeholder="Enter name" 
-                    required
-                    disabled={uploading}
-                  />
-                </div>
 
                 {/* Media Upload */}
                 <div className="grid gap-3">

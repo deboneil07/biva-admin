@@ -54,7 +54,7 @@ const data = {
         },
         {
           title: "Add Room",
-          url: "/analytics/reports",
+          url: "/hotel/rooms",
         },
         {
           title: "Bookings",
@@ -95,11 +95,11 @@ const data = {
       items: [
         {
           title: "Add Event",
-          url: "/analytics/reports",
+          url: "/events",
         },
         {
           title: "Bookings",
-          url: "/analytics/reports",
+          url: "/foodcourt/event/bookings",
         },
       ]
 

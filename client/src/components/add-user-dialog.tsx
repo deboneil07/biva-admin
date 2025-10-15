@@ -9,7 +9,7 @@ import { IconPlus } from "@tabler/icons-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import useUser from "@/hooks/useUser"
-import { UploadFile } from "./uplaod-file"
+import { UploadFile } from "./upload-file"
 
 export default function AddUser() {
     const [selectedRole, setSelectedRole] = useState<string>("");
