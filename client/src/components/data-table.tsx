@@ -140,7 +140,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 
       return (
         <div className="w-32">
-          <Badge 
+          <Badge
             variant="outline"
             className={`px-2 py-1 text-xs font-medium }`}
           >
@@ -158,7 +158,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     enableSorting: false,
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
-   
+
         <TableCellViewer item={row.original} triggerButton={
           <Button
             variant="outline"
@@ -168,8 +168,8 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
             <IconPencil className="h-4 w-4" />
           </Button>
         } />
-        
-        <TableActionDelete data={row.original}/>
+
+        <TableActionDelete data={row.original} />
       </div>
     ),
   },
@@ -193,11 +193,11 @@ export function DataTable({
 }) {
   const [data, setData] = React.useState(() => initialData?.data || initialData || []);
   const [rowSelection, setRowSelection] = React.useState({});
-  
+
   // User store integration
   const { id: selectedUserIds, count, updateStore } = useUserStore();
 
-  const {deleteUser} = useUser();
+  const { deleteUser } = useUser();
 
   // Update data when initialData changes
   React.useEffect(() => {
@@ -233,21 +233,21 @@ export function DataTable({
   React.useEffect(() => {
     const selectedRows = table.getFilteredSelectedRowModel().rows;
     const selectedIds = selectedRows.map(row => row.original.id);
-    
-    updateStore({ 
-      id: selectedIds, 
-      count: selectedIds.length 
+
+    updateStore({
+      id: selectedIds,
+      count: selectedIds.length
     });
   }, [rowSelection, updateStore, table]);
 
   // Handle bulk delete
   const handleBulkDelete = async () => {
     if (selectedUserIds.length === 0) return;
-    
+
     try {
       await deleteUser({ id: selectedUserIds });
       toast.success(`Successfully deleted ${selectedUserIds.length} user(s)`);
-      
+
       // Clear selection after successful delete
       setRowSelection({});
       updateStore({ id: [], count: 0 });
@@ -266,16 +266,16 @@ export function DataTable({
         <div>
           <h1 className="text-5xl font-bold">Team Sheet</h1>
         </div>
-        
+
         <div className="flex items-center gap-2">
           {/* Regular AddUser button - always visible */}
-      <AddUser />
-          
-     
+          <AddUser />
+
+
           {count > 0 && (
             <>
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 size="sm"
                 onClick={handleBulkDelete}
                 className="flex items-center gap-2"
@@ -304,9 +304,9 @@ export function DataTable({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -379,10 +379,10 @@ export function DataTable({
 
 
 
-function TableCellViewer({ 
-  item, 
-  triggerButton 
-}: { 
+function TableCellViewer({
+  item,
+  triggerButton
+}: {
   item: z.infer<typeof schema>;
   triggerButton?: React.ReactNode;
 }) {
@@ -427,22 +427,22 @@ function TableCellViewer({
               <div className="flex flex-col gap-2">
                 <Label>Profile Image</Label>
                 <div className="w-20 h-20 rounded-lg overflow-hidden border">
-                  <img 
-                    src={item.image} 
-                    alt="Profile" 
+                  <img
+                    src={item.image}
+                    alt="Profile"
                     className="w-full h-full object-cover"
                   />
                 </div>
               </div>
             )}
-            
+
             {item.aadhar_img_url && (
               <div className="flex flex-col gap-2">
                 <Label>Aadhar/PAN Image</Label>
                 <div className="w-32 h-20 rounded-lg overflow-hidden border">
-                  <img 
-                    src={item.aadhar_img_url} 
-                    alt="Aadhar/PAN" 
+                  <img
+                    src={item.aadhar_img_url}
+                    alt="Aadhar/PAN"
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -487,15 +487,15 @@ function TableCellViewer({
           </form>
         </div>
         <DrawerFooter className="flex flex-row gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => setIsOpen(false)}
             disabled={isEditingUserPending}
             className="flex-1"
           >
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleUpdateRole}
             disabled={isEditingUserPending || selectedRole === item.role}
             className="flex-1"

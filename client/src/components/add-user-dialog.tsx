@@ -9,7 +9,7 @@ import { IconPlus } from "@tabler/icons-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import useUser from "@/hooks/useUser"
-import { UploadImage } from "./uplaod-images"
+import { UploadFile } from "./uplaod-file"
 
 export default function AddUser() {
     const [selectedRole, setSelectedRole] = useState<string>("");
@@ -122,11 +122,12 @@ export default function AddUser() {
                         <form onSubmit={handleSubmit} className="grid gap-4 pb-4">
 
                             <div className="grid gap-3">
-                                <UploadImage
+                                <UploadFile
                                     label="Personal Image"
                                     onFileSelect={handleImageSelect}
                                     required={false}
                                     disabled={isCreatingUserPending}
+                                    accept="image"
                                 />
                             </div>
 
@@ -222,11 +223,12 @@ export default function AddUser() {
                             </div>
 
                             <div className="grid gap-3">
-                                <UploadImage
+                                <UploadFile
                                     label="Aadhar/PAN Image"
                                     onFileSelect={handleAadharImageSelect}
                                     required={true}
                                     disabled={isCreatingUserPending}
+                                    accept="image"
                                 />
                             </div>
                         </form>

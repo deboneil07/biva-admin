@@ -39,21 +39,22 @@ const data = {
       icon: IconUsers,
     },
     {
+      title: "Gallery",
+      url: "/gallery",
+      icon: IconFolder,
+    },
+    {
       title: "Hotel",
       url: "#",
       icon: IconChartBar,
       items: [
         {
           title: "Hotel Media",
-          url: "/analytics/overview",
+          url: "/hotel/media",
         },
         {
           title: "Add Room",
           url: "/analytics/reports",
-        },
-        {
-          title: "Add Event",
-          url: "/analytics/insights",
         },
         {
           title: "Bookings",
@@ -67,20 +68,12 @@ const data = {
       icon: IconChartBar,
       items: [
         {
-          title: "Food Court media",
-          url: "/analytics/overview",
-        },
-        {
-          title: "Add Event",
-          url: "/analytics/reports",
+          title: "Food Court Media",
+          url: "/foodcourt/media",
         },
         {
           title: "Food Court Bookings",
           url: "/foodcourt/bookings",
-        },
-        {
-          title: "Event Bookings",
-          url: "/foodcourt/event/bookings",
         },
       ],
     },
@@ -91,9 +84,25 @@ const data = {
       items: [
         {
           title: "Bakery Media",
-          url: "/projects/gallery",
+          url: "/bakery/media",
         },
       ],
+    },
+    {
+      title: "Events",
+      url: "#",
+      icon: IconFolder,
+      items: [
+        {
+          title: "Add Event",
+          url: "/analytics/reports",
+        },
+        {
+          title: "Bookings",
+          url: "/analytics/reports",
+        },
+      ]
+
     },
   ],
 };

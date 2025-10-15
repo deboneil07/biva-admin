@@ -1,33 +1,35 @@
-import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Settings, Settings2 } from "lucide-react";
+import { Check, Settings2 } from "lucide-react";
 import { useMediaStore } from "@/store/media-store";
+import type { PROPS } from "@/data/image-props";
 
 type ImageCardProps = {
     id: string;
     name: string;
     src: string;
+    prop: keyof typeof PROPS;
 };
 
-export default function ImageCard({ id, name, src }: ImageCardProps) {
+export default function ImageCard({ id, name, src, prop }: ImageCardProps) {
 
-    // const name = "Mountain Landscape";
-
-    const { id: selectedIds, updateStore } = useMediaStore();
+    const { updateStore, getSelection } = useMediaStore();
+    const { id: selectedIds } = getSelection(prop);
 
     const isSelected = selectedIds.includes(id);
 
     const handleCardClick = () => {
         if (isSelected) {
-            updateStore({
-                id: selectedIds.filter((i) => i !== id),
-                count: selectedIds.length - 1,
+            const newIds = selectedIds.filter((i) => i !== id);
+            updateStore(prop, {
+                id: newIds,
+                count: newIds.length,
             });
         } else {
-            updateStore({
-                id: [...selectedIds, id],
-                count: selectedIds.length + 1,
+            const newIds = [...selectedIds, id];
+            updateStore(prop, {
+                id: newIds,
+                count: newIds.length,
             });
         }
     };
@@ -55,7 +57,7 @@ export default function ImageCard({ id, name, src }: ImageCardProps) {
 
                 <div className="relative w-full h-40 -m-px rounded-t-xl overflow-hidden">
                     <img
-                        src="/test.png"
+                        src={src}
                         alt={name}
                         className="w-full h-full object-cover "
                     />

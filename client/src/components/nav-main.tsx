@@ -1,4 +1,6 @@
 import { type LucideIcon, ChevronRight } from "lucide-react"
+import { Link } from "react-router-dom"
+import { useState } from "react"
 import {
   Collapsible,
   CollapsibleContent,
@@ -24,14 +26,26 @@ interface NavItem {
 }
 
 export function NavMain({ items }: { items: NavItem[] }) {
+  const [openItems, setOpenItems] = useState<Record<string, boolean>>({})
+
+  // Toggle collapsible state
+  const toggleItem = (title: string) => {
+    setOpenItems(prev => ({
+      ...prev,
+      [title]: !prev[title]
+    }))
+  }
+
   // Recursive function to render sub menu items
   const renderSubNavItem = (item: NavItem): React.ReactNode => {
     if (item.items && item.items.length > 0) {
+      const isOpen = openItems[item.title] || false
       return (
         <Collapsible
           key={item.title}
           asChild
-          defaultOpen={item.isActive}
+          open={isOpen}
+          onOpenChange={() => toggleItem(item.title)}
           className="group/collapsible"
         >
           <SidebarMenuSubItem>
@@ -57,7 +71,10 @@ export function NavMain({ items }: { items: NavItem[] }) {
     return (
       <SidebarMenuSubItem key={item.title}>
         <SidebarMenuSubButton asChild>
-          <a href={item.url}>{item.icon && <item.icon />}<span>{item.title}</span></a>
+          <Link to={item.url}>
+            {item.icon && <item.icon />}
+            <span>{item.title}</span>
+          </Link>
         </SidebarMenuSubButton>
       </SidebarMenuSubItem>
     )
@@ -69,12 +86,14 @@ export function NavMain({ items }: { items: NavItem[] }) {
       <SidebarMenu>
         {items.map((item) => {
           if (item.items && item.items.length > 0) {
+            const isOpen = openItems[item.title] || false
             // Parent item with children
             return (
               <Collapsible
                 key={item.title}
                 asChild
-                defaultOpen={item.isActive}
+                open={isOpen}
+                onOpenChange={() => toggleItem(item.title)}
                 className="group/collapsible"
               >
                 <SidebarMenuItem>
@@ -99,10 +118,10 @@ export function NavMain({ items }: { items: NavItem[] }) {
             return (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton asChild>
-                  <a href={item.url}>
+                  <Link to={item.url}>
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )

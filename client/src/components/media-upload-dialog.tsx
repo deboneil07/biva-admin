@@ -11,11 +11,130 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Upload } from "lucide-react"
-import { UploadImage } from "./uplaod-images"
+import { UploadFile } from "./uplaod-file"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { PROPS } from "@/data/image-props"
 
-export function MediaUploadDialog() {
+export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
+
+  const fields = PROPS[prop];
+
+  // Function to render field based on value type
+  const renderField = (field: { key: string; value: any }, index: number) => {
+    const keyFieldId = `key-${index}`;
+    const valueFieldId = `value-${index}`;
+    
+    // Single string value - fixed and disabled
+    if (typeof field.value === 'string') {
+      return (
+        <div key={index} className="flex gap-2">
+          <Input 
+            id={keyFieldId} 
+            name={`key-${index}`} 
+            value={field.key} 
+            disabled 
+            className="bg-muted cursor-not-allowed flex-1"
+            placeholder="Key"
+          />
+          <Input 
+            id={valueFieldId} 
+            name={`value-${index}`} 
+            value={field.value} 
+            disabled 
+            className="bg-muted cursor-not-allowed flex-1"
+            placeholder="Value"
+          />
+        </div>
+      );
+    }
+    
+    // Array with values - select dropdown
+    if (Array.isArray(field.value) && field.value.length > 0) {
+      return (
+        <div key={index} className="flex gap-2">
+          <Input 
+            id={keyFieldId} 
+            name={`key-${index}`} 
+            value={field.key} 
+            disabled 
+            className="bg-muted cursor-not-allowed flex-1"
+            placeholder="Key"
+          />
+          <Select name={`value-${index}`}>
+            <SelectTrigger id={valueFieldId} className="flex-1">
+              <SelectValue placeholder={`Select ${field.key}`} />
+            </SelectTrigger>
+            <SelectContent>
+              {field.value.map((option: string, optionIndex: number) => (
+                <SelectItem key={optionIndex} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+    
+    // Empty array - select dropdown (placeholder for future options)
+    if (Array.isArray(field.value) && field.value.length === 0) {
+      return (
+        <div key={index} className="flex gap-2">
+          <Input 
+            id={keyFieldId} 
+            name={`key-${index}`} 
+            value={field.key} 
+            disabled 
+            className="bg-muted cursor-not-allowed flex-1"
+            placeholder="Key"
+          />
+          <Select name={`value-${index}`}>
+            <SelectTrigger id={valueFieldId} className="flex-1">
+              <SelectValue placeholder={`Select ${field.key} (no options available)`} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="placeholder" disabled>
+                No options available
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+    
+    // Null value - open input field
+    if (field.value === null) {
+      return (
+        <div key={index} className="flex gap-2">
+          <Input 
+            id={keyFieldId} 
+            name={`key-${index}`} 
+            value={field.key} 
+            disabled 
+            className="bg-muted cursor-not-allowed flex-1"
+            placeholder="Key"
+          />
+          <Input 
+            id={valueFieldId} 
+            name={`value-${index}`} 
+            placeholder={`Enter ${field.key}`}
+            className="flex-1"
+          />
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
   return (
     <Dialog>
       <form>
@@ -25,7 +144,7 @@ export function MediaUploadDialog() {
           </Button>
         </DialogTrigger>
 
-        <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-hidden p-0">
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-hidden p-0">
       
           <ScrollArea className="h-[80vh]">
             <div className="p-6 space-y-6">
@@ -43,18 +162,17 @@ export function MediaUploadDialog() {
                   <Input id="name-1" name="name" placeholder="Enter name" />
                 </div>
 
-         
-                <UploadImage />
+                {/* Image Upload */}
+                <UploadFile />
 
-            
+                {/* Dynamic Fields based on PROPS */}
                 <div className="grid gap-3">
-                  <Label>Metadata</Label>
-                  {[...Array(10)].map((_, i) => (
-                    <div key={i} className="flex gap-2">
-                      <Input id={`key-${i}`} name={`key-${i}`} placeholder="Key" className="flex-1" />
-                      <Input id={`value-${i}`} name={`value-${i}`} placeholder="Value" className="flex-1" />
-                    </div>
-                  ))}
+                  <Label className="text-sm font-medium text-muted-foreground">
+                    Metadata Fields
+                  </Label>
+                  <div className="space-y-4">
+                    {fields.map((field, index) => renderField(field, index))}
+                  </div>
                 </div>
               </div>
 
