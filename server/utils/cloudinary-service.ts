@@ -93,12 +93,16 @@ export class CloudinaryService {
   async listByMetadata(
     metadataKey: string,
     metadataValue: string,
+    folder: string
   ): Promise<any[]> {
     try {
-      const expr = `context.${metadataKey}="${metadataValue}"`;
+      console.log(metadataKey, metadataValue)
+      const expr = `context.${metadataKey}=${metadataValue}`
+
+      const exp = `folder:"${folder}" AND ${expr}` 
 
       const res = await Cloudinary.search
-        .expression(expr)
+        .expression(exp)
         .with_field("context")
         .max_results(100)
         .execute();

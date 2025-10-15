@@ -22,6 +22,13 @@ interface UploadFileProps {
     size?: "small" | "default"; // 👈 new prop
 }
 
+const HEADS = {
+  "/hotel/media": "hotel",
+  "/foodcourt/media": "food-court",
+  "/bakery/media": "bakery",
+};
+
+
 export function UploadFile({
     onFileSelect,
     label = "Upload a File",

@@ -22,10 +22,162 @@ import { Upload } from "lucide-react"
 import { UploadFile } from "./uplaod-file"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { PROPS } from "@/data/image-props"
+import { useState } from "react"
+import { instance } from "@/utils/axios"
+import { useLocation } from "react-router-dom"
+import { toast } from "sonner"
+import { useQueryClient } from "@tanstack/react-query"
+
+const FOLDER_MAP = {
+  "/hotel/media": "hotel",
+  "/foodcourt/media": "food-court",
+  "/bakery/media": "bakery",
+} as const;
 
 export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const queryClient = useQueryClient();
 
   const fields = PROPS[prop];
+  const folder = FOLDER_MAP[location.pathname as keyof typeof FOLDER_MAP];
+
+  // Debug file selection
+  const handleFileSelect = (file: File | null) => {
+    console.log("📁 File selected:", {
+      file: file ? {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      } : null
+    });
+    setSelectedFile(file);
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    
+    if (!selectedFile) {
+      toast.error("Please select a file to upload");
+      return;
+    }
+
+    if (!folder) {
+      toast.error("Invalid upload location");
+      return;
+    }
+
+    // Validate file type
+    const isImage = selectedFile.type.startsWith("image/");
+    const isVideo = selectedFile.type.startsWith("video/");
+    
+    if (!isImage && !isVideo) {
+      toast.error("Please select a valid image or video file");
+      return;
+    }
+
+    // Check file size (3MB limit)
+    const maxSizeBytes = 3 * 1024 * 1024; // 3MB
+    if (selectedFile.size > maxSizeBytes) {
+      toast.error("File size must be less than 3MB");
+      return;
+    }
+
+    console.log("✅ File validation passed:", {
+      name: selectedFile.name,
+      type: selectedFile.type,
+      size: `${(selectedFile.size / 1024 / 1024).toFixed(2)}MB`,
+      isImage,
+      isVideo
+    });
+
+    try {
+      setUploading(true);
+      
+      const formData = new FormData();
+      const form = new FormData(event.currentTarget);
+      
+      // Add the file
+      formData.append("file", selectedFile);
+      
+      // Add the folder
+      formData.append("folder", folder);
+      
+      // Add name field
+      const name = form.get("name") as string;
+      if (name) {
+        formData.append("name", name);
+      }
+      
+      console.log("🔧 Processing metadata fields:", fields);
+
+      // Add metadata fields from the dynamic form
+      fields.forEach((field, index) => {
+        const fieldKey = field.key; // e.g., "position"
+        
+        // If value is a fixed string, use it directly
+        if (typeof field.value === 'string') {
+          formData.append(fieldKey, field.value);
+          console.log(`Fixed field: ${fieldKey} = ${field.value}`);
+        }
+        // If value is null, get user input from form
+        else if (field.value === null) {
+          const valueFieldName = `value-${index}`;
+          const userInput = form.get(valueFieldName) as string;
+          if (userInput && userInput.trim()) {
+            formData.append(fieldKey, userInput);
+            console.log(`User input field: ${fieldKey} = ${userInput}`);
+          }
+        }
+        // If value is an array, get selected option from form
+        else if (Array.isArray(field.value)) {
+          const valueFieldName = `value-${index}`;
+          const selectedOption = form.get(valueFieldName) as string;
+          if (selectedOption && selectedOption !== "placeholder") {
+            formData.append(fieldKey, selectedOption);
+            console.log(`Selected option field: ${fieldKey} = ${selectedOption}`);
+          }
+        }
+      });
+
+      // Debug: Log FormData contents
+      console.log("📤 Uploading media with data:");
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}: File(${value.name}, ${value.size} bytes)`);
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      }
+      console.log(formData)
+      // Upload to server
+      const response = await instance.post("/upload-media", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.data) {
+        toast.success("Media uploaded successfully!");
+        
+        // Invalidate and refetch media queries
+        queryClient.invalidateQueries({ queryKey: ["media", folder] });
+        
+        // Reset form and close dialog
+        setSelectedFile(null);
+        setOpen(false);
+        event.currentTarget.reset();
+      }
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error(error.response?.data?.error || "Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Function to render field based on value type
   const renderField = (field: { key: string; value: any }, index: number) => {
@@ -68,7 +220,7 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
             className="bg-muted cursor-not-allowed flex-1"
             placeholder="Key"
           />
-          <Select name={`value-${index}`}>
+          <Select name={`value-${index}`} disabled={uploading}>
             <SelectTrigger id={valueFieldId} className="flex-1">
               <SelectValue placeholder={`Select ${field.key}`} />
             </SelectTrigger>
@@ -96,7 +248,7 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
             className="bg-muted cursor-not-allowed flex-1"
             placeholder="Key"
           />
-          <Select name={`value-${index}`}>
+          <Select name={`value-${index}`} disabled={uploading}>
             <SelectTrigger id={valueFieldId} className="flex-1">
               <SelectValue placeholder={`Select ${field.key} (no options available)`} />
             </SelectTrigger>
@@ -116,7 +268,7 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
         <div key={index} className="flex gap-2">
           <Input 
             id={keyFieldId} 
-            name={`key-${index}`} 
+            name={`value-${index}`} 
             value={field.key} 
             disabled 
             className="bg-muted cursor-not-allowed flex-1"
@@ -127,6 +279,7 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
             name={`value-${index}`} 
             placeholder={`Enter ${field.key}`}
             className="flex-1"
+            disabled={uploading}
           />
         </div>
       );
@@ -136,16 +289,15 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
   };
 
   return (
-    <Dialog>
-      <form>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Upload className="w-4 h-4 mr-2" /> Upload
-          </Button>
-        </DialogTrigger>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Upload className="w-4 h-4 mr-2" /> Upload
+        </Button>
+      </DialogTrigger>
 
-        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-hidden p-0">
-      
+      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-hidden p-0">
+        <form onSubmit={handleSubmit}>
           <ScrollArea className="h-[80vh]">
             <div className="p-6 space-y-6">
               <DialogHeader>
@@ -158,12 +310,27 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
               <div className="grid gap-4">
                 {/* Name Field */}
                 <div className="grid gap-3">
-                  <Label htmlFor="name-1">Name</Label>
-                  <Input id="name-1" name="name" placeholder="Enter name" />
+                  <Label htmlFor="name-1">Name *</Label>
+                  <Input 
+                    id="name-1" 
+                    name="name" 
+                    placeholder="Enter name" 
+                    required
+                    disabled={uploading}
+                  />
                 </div>
 
-                {/* Image Upload */}
-                <UploadFile />
+                {/* Media Upload */}
+                <div className="grid gap-3">
+                  <Label>Media File *</Label>
+                  <UploadFile 
+                    onFileSelect={handleFileSelect}
+                    disabled={uploading}
+                    size="small"
+                    accept="both"
+                    label="Upload Image or Video"
+                  />
+                </div>
 
                 {/* Dynamic Fields based on PROPS */}
                 <div className="grid gap-3">
@@ -178,14 +345,25 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
 
               <DialogFooter className="pt-4">
                 <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
+                  <Button 
+                    variant="outline" 
+                    type="button"
+                    disabled={uploading}
+                  >
+                    Cancel
+                  </Button>
                 </DialogClose>
-                <Button type="submit">Save changes</Button>
+                <Button 
+                  type="submit" 
+                  disabled={uploading || !selectedFile}
+                >
+                  {uploading ? "Uploading..." : "Upload Media"}
+                </Button>
               </DialogFooter>
             </div>
           </ScrollArea>
-        </DialogContent>
-      </form>
+        </form>
+      </DialogContent>
     </Dialog>
   )
 }

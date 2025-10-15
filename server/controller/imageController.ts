@@ -41,23 +41,27 @@ export const getImage = async (c: Context) => {
     const param = (c.req.param("folder") || "").toLowerCase();
 
     // Helper: fetch all items with a context key "position"
-    const itemsWithPosition = await cloudService.listByMetadata("position");
+    // console.log("init", itemsWithPosition)
 
     // Filter helper
-    const filterByPosition = (items: any[], position: string) => {
-      return items.filter((itm) => itm.context?.position === position);
-    };
+    // const filterByPosition = (items: any[], position: string) => {
+    //   return items.filter((itm) => itm.context?.position === position);
+    // };
 
     if (param.includes("hotel")) {
-      const heroItems = filterByPosition(itemsWithPosition, "hotel-hero");
-      const banquetItems = filterByPosition(itemsWithPosition, "banquet");
+      const HotelHeroItems = await cloudService.listByMetadata("position", "hero", param);
+      // const heroItems = filterByPosition(itemsWithPosition, "hero");
+      console.log("hero itemns", HotelHeroItems)
+      // const banquetItems = filterByPosition(itemsWithPosition, "banquet");
+      const HotelBanquetItems = await cloudService.listByMetadata("position", "banquet", param);
 
-      const hero: HotelHero[] = heroItems.map((itm) => ({
+
+      const hero: HotelHero[] = HotelHeroItems.map((itm) => ({
         public_id: itm.public_id,
         url: itm.secure_url,
         position: itm.context.position,
       }));
-      const banquet: HotelHero[] = banquetItems.map((itm) => ({
+      const banquet: HotelHero[] = HotelBanquetItems.map((itm) => ({
         public_id: itm.public_id,
         url: itm.secure_url,
         position: itm.context.position,
@@ -92,10 +96,13 @@ export const getImage = async (c: Context) => {
         })),
       });
     } else if (param.includes("food-court")) {
-      const foodCourtItems = await cloudService.listImages("food-court", true);
-      const heroItems = filterByPosition(foodCourtItems, "food-court-hero");
+      // const foodCourtItems = await cloudService.listImages("food-court", true);
+      // const heroItems = filterByPosition(foodCourtItems, "hero");
+      const FoodCourtHeroItems = await cloudService.listByMetadata("position", "hero", param);
+      const FoodCourtPreference = await cloudService.listByMetadata("position", "name", param);
 
-      const hero: HotelHero[] = heroItems.map((itm) => ({
+
+      const hero: HotelHero[] = FoodCourtHeroItems.map((itm) => ({
         public_id: itm.public_id,
         url: itm.secure_url,
         position: itm.context.position,
@@ -104,17 +111,12 @@ export const getImage = async (c: Context) => {
       const preferences: { public_id: string; url: string; name: string }[] =
         [];
 
-      foodCourtItems.forEach((itm) => {
-        if (itm.context?.position === "preference") {
-          const name = itm.context.name;
-          if (name && (name === "veg" || name === "non-veg")) {
-            preferences.push({
-              public_id: itm.public_id,
-              url: itm.secure_url,
-              name,
-            });
-          }
-        }
+      FoodCourtPreference.forEach((itm) => {
+        preferences.push({
+          public_id: itm.public_id,
+          url: itm.secure_url,
+          name: itm?.context.name,
+        })
       });
 
       return c.json({
@@ -124,10 +126,10 @@ export const getImage = async (c: Context) => {
         },
       });
     } else if (param.includes("hotel-rooms")) {
-      const roomItems = await cloudService.listByMetadata("position");
-      const roomFiltered = filterByPosition(roomItems, "rooms");
+      const roomItems = await cloudService.listByMetadata("position", "rooms", param);
+      // const roomFiltered = filterByPosition(roomItems, "rooms");
 
-      const rooms: GroupedRooms[] = roomFiltered.map((itm) => ({
+      const rooms: GroupedRooms[] = roomItems.map((itm) => ({
         public_id: itm.public_id,
         url: itm.secure_url,
         desc: itm.context?.description ?? "description not available",
@@ -138,6 +140,15 @@ export const getImage = async (c: Context) => {
       return c.json({ rooms });
     } else if (param.includes("bakery")) {
       const bakeryImages = await cloudService.listImagesByTags(bakeryTypes);
+            const bakeryHero = await cloudService.listByMetadata("position", "hero", param);
+
+      const hero: HotelHero[] = bakeryHero.map((itm) => ({
+        public_id: itm.public_id,
+        url: itm.secure_url,
+        position: itm.context.position,
+      }));
+
+
       const groupedItems: GroupedBakeryItems = {
         bread: [],
         biscuit: [],
@@ -161,7 +172,7 @@ export const getImage = async (c: Context) => {
       });
 
       return c.json({
-        data: groupedItems,
+        data: {hero:hero, groupedItems},
       });
     } else {
       const images = await cloudService.listImages(param);
@@ -208,9 +219,17 @@ export const uploadImageVideoController = async (
       folder,
       context: metadata,
     });
-    return res;
+    return c.json(res);
   } catch (err: any) {
     console.error("uploadImage error:", err);
     throw new Error("Image upload failed");
   }
 };
+
+
+export const uploadMediaMethod = async (file: File, folder: string) => {
+  const res = await cloudService.uploadMedia(file, {
+    folder
+  });
+  return res;
+}
