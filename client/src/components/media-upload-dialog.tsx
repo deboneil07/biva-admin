@@ -22,7 +22,7 @@ import { Upload } from "lucide-react"
 import { UploadFile } from "./upload-file"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { PROPS } from "@/data/image-props"
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { instance } from "@/utils/axios"
 import { useLocation } from "react-router-dom"
 import { toast } from "sonner"
@@ -39,6 +39,7 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [open, setOpen] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const location = useLocation();
   const queryClient = useQueryClient();
 
@@ -156,15 +157,33 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
       });
 
       if (response.data) {
+        console.log("✅ Upload successful, invalidating queries for folder:", folder);
+        console.log("📍 Current location:", location.pathname);
         toast.success("Media uploaded successfully!");
         
-        // Invalidate and refetch media queries
-        queryClient.invalidateQueries({ queryKey: ["media", folder] });
+        // Invalidate and refetch media queries - try multiple approaches
+        // 1. Specific folder invalidation
+        await queryClient.invalidateQueries({ queryKey: ["media", folder] });
+        console.log("🔄 Specific query invalidation triggered for key:", ["media", folder]);
+        
+        // 2. Broad media invalidation as fallback
+        await queryClient.invalidateQueries({ queryKey: ["media"] });
+        console.log("🔄 Broad query invalidation triggered for all media queries");
+        
+        // 3. Force refetch for current queries
+        await queryClient.refetchQueries({ queryKey: ["media", folder] });
+        console.log("🔄 Force refetch triggered for key:", ["media", folder]);
         
         // Reset form and close dialog
         setSelectedFile(null);
         setOpen(false);
-        event.currentTarget.reset();
+        
+        // Safely reset the form
+        if (formRef.current) {
+          formRef.current.reset();
+        }
+        
+        console.log("🎉 Upload process completed successfully");
       }
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -292,7 +311,7 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-hidden p-0">
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
           <ScrollArea className="h-[80vh]">
             <div className="p-6 space-y-6">
               <DialogHeader>

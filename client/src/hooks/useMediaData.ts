@@ -61,9 +61,14 @@ async function fetchMediaData(endpoint: string): Promise<MediaApiResponse> {
 export function useMediaData(pathname: string) {
   const endpoint = ENDPOINT_MAP[pathname as keyof typeof ENDPOINT_MAP];
   
+  console.log("🔍 useMediaData called with:", { pathname, endpoint });
+  
   return useQuery({
     queryKey: ['media', endpoint],
-    queryFn: () => fetchMediaData(endpoint),
+    queryFn: () => {
+      console.log("🚀 Fetching data for endpoint:", endpoint);
+      return fetchMediaData(endpoint);
+    },
     enabled: !!endpoint,
     staleTime: 5 * 60 * 1000, // 5 minutes
     // gcTime: 10 * 60 * 1000, // 10 minutes
@@ -105,12 +110,18 @@ export function useDeleteMedia() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ endpoint, ids }: { endpoint: string; ids: string[] }) => {
-      await instance.delete(`/delete-media/${endpoint}`, { data: { ids } });
+    mutationFn: async ({ ids }: { ids: string[]; endpoint?: string }) => {
+      console.log(ids);
+      await instance.post(`/delete-media`, { public_ids: ids });
     },
     onSuccess: (_, variables) => {
-      // Invalidate and refetch media data
-      queryClient.invalidateQueries({ queryKey: ['media', variables.endpoint] });
+      // Invalidate and refetch media data for the specific endpoint if provided
+      if (variables.endpoint) {
+        queryClient.invalidateQueries({ queryKey: ['media', variables.endpoint] });
+      } else {
+        // Invalidate all media queries if no specific endpoint
+        queryClient.invalidateQueries({ queryKey: ['media'] });
+      }
     },
   });
 }

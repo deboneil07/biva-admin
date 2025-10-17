@@ -5,6 +5,7 @@ import { Badge } from "./ui/badge";
 import { Trash } from "lucide-react";
 import type { PROPS } from "@/data/image-props";
 import { useLocation } from "react-router-dom";
+import { useDeleteMedia } from "@/hooks/useMediaData";
 
 const HEADS = {
   "/hotel/media": "Hotel",
@@ -12,16 +13,38 @@ const HEADS = {
   "/bakery/media": "Bakery",
 };
 
+const ENDPOINT_MAP = {
+  "/hotel/media": "hotel",
+  "/foodcourt/media": "food-court", 
+  "/bakery/media": "bakery",
+} as const;
+
 export default function GalleryHeader({ prop }: { prop: keyof typeof PROPS }) {
-  const { resetStore, getSelection, selections } = useMediaStore();
-  const { count } = getSelection(prop);
+  const { getSelection, updateStore } = useMediaStore();
+  const {mutate} = useDeleteMedia()
+  const { count, id: selectedIds } = getSelection(prop);
   const location = useLocation();
 
   const head = HEADS[location.pathname as keyof typeof HEADS];
+  const endpoint = ENDPOINT_MAP[location.pathname as keyof typeof ENDPOINT_MAP];
   const formattedProp = prop.charAt(0).toUpperCase() + prop.slice(1);
 
-  const handleDelete = () => {
-    console.log(selections)
+  const handleDelete = async () => {
+    console.log(selectedIds)
+    if (selectedIds.length > 0) {
+     mutate({
+        ids: selectedIds,
+        endpoint: endpoint
+      }, {
+        onSuccess: () => {
+          // Reset the selection state after successful deletion
+          updateStore(prop, {
+            id: [],
+            count: 0,
+          });
+        }
+      });
+    }
   };
 
   return (
