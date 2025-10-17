@@ -247,9 +247,14 @@ export const uploadImageVideoController = async (
   }
 };
 
-export const uploadMediaMethod = async (file: File, folder: string) => {
+export const uploadMediaMethod = async (
+  file: File,
+  folder: string,
+  context?: Record<string, string>,
+) => {
   const res = await cloudService.uploadMedia(file, {
     folder,
+    context,
   });
   return res;
 };

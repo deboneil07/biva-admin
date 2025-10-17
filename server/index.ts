@@ -5,6 +5,7 @@ import { cors } from "hono/cors";
 import { adminRouter } from "./controller/adminRouter";
 import { serve } from "bun";
 import { getBookingsRouter } from "./controller/getBookings";
+import { eventRouter } from "./controller/eventController";
 import {
   deleteMediaController,
   getImage,
@@ -28,6 +29,7 @@ app.get("/get-media/:folder", getImage);
 app.route("/get-bookings", getBookingsRouter);
 app.post("/upload-media", uploadImageVideoController);
 app.post("/delete-media", deleteMediaController);
+app.route("/event", eventRouter);
 
 serve({
   fetch: app.fetch,
