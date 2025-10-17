@@ -5,6 +5,7 @@ import { uploadMediaMethod } from "./imageController";
 import { db } from "../db";
 import { adminEventTable } from "../drizzle/schema";
 import { generate_uuid } from "../utils/uuid";
+import { eq, inArray } from "drizzle-orm";
 
 export const eventRouter = new Hono();
 
@@ -83,12 +84,51 @@ eventRouter.post("/create", async (c: Context) => {
 });
 
 eventRouter.delete("/delete", async (c: Context) => {
-  const eventToDelete = await c.req.json();
-  if (!eventToDelete) {
-    return c.json({ error: "Missing event ID" }, 400);
-  }
+  try {
+    const body = await c.req.json();
+    const eventIdsToDelete: string[] = body["ids"];
 
-  const deleteEvent = await db
-    .delete(adminEventTable)
-    .where(eq(adminEventTable.event_id, eventToDelete));
+    if (
+      !eventIdsToDelete ||
+      !Array.isArray(eventIdsToDelete) ||
+      eventIdsToDelete.length === 0
+    ) {
+      return c.json(
+        { error: "Invalid or empty array of event IDs provided." },
+        400,
+      );
+    }
+
+    const deletedEvents = await db
+      .delete(adminEventTable)
+      .where(inArray(adminEventTable.event_id, eventIdsToDelete))
+      .returning({
+        event_id: adminEventTable.event_id,
+        event_name: adminEventTable.event_name,
+      });
+
+    if (deletedEvents.length == 0) {
+      return c.json(
+        {
+          success: true,
+          message: "No events found for the provided IDs. Nothing was deleted.",
+          deleted_count: 0,
+        },
+        200,
+      );
+    }
+
+    return c.json(
+      {
+        success: true,
+        message: `${deletedEvents.length} events deleted successfully`,
+        deleted_count: deletedEvents.length,
+        deleted_events: deletedEvents,
+      },
+      200,
+    );
+  } catch (err: any) {
+    console.error("Error deleting events:", err);
+    return c.json({ error: "Failed to delete events" }, 500);
+  }
 });

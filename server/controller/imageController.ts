@@ -264,7 +264,6 @@ export const uploadMediaMethod = async (
 export const deleteMediaController = async (c: Context) => {
   try {
     const body = await c.req.json();
-    console.log(body);
     const public_ids: string[] = body.public_ids;
     if (!Array.isArray(public_ids) || public_ids.length == 0) {
       return c.json(
