@@ -11,12 +11,14 @@ const HEADS = {
   "/hotel/media": "Hotel",
   "/foodcourt/media": "Food Court",
   "/bakery/media": "Bakery",
+  "/gallery": "Gallery"
 };
 
 const ENDPOINT_MAP = {
   "/hotel/media": "hotel",
   "/foodcourt/media": "food-court", 
   "/bakery/media": "bakery",
+    "/gallery": "gallery"
 } as const;
 
 export default function GalleryHeader({ prop }: { prop: keyof typeof PROPS }) {

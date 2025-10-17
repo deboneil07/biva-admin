@@ -32,7 +32,8 @@ const FOLDER_MAP = {
   "/hotel/media": "hotel",
   "/foodcourt/media": "food-court",
   "/bakery/media": "bakery",
-  "/hotel/rooms" : "hotel-rooms"
+  "/hotel/rooms" : "hotel-rooms",
+  "/gallery": "gallery"
 } as const;
 
 export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {

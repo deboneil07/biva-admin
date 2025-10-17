@@ -26,7 +26,8 @@ const ENDPOINT_MAP = {
   "/foodcourt/media": "food-court", 
   "/bakery/media": "bakery",
   "/hotel/rooms": "hotel-rooms",
-  "/events": "events"
+  "/events": "events",
+  "/gallery": "gallery"
 } as const;
 
 // Fetch function for TanStack Query
