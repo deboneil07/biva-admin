@@ -32,6 +32,15 @@ import {
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -232,12 +241,16 @@ export function Events({
   data: initialData,
   isLoading,
   error,
+  onDeleteSuccess,
 }: {
   data?: z.infer<typeof schema>[] | any;
   isLoading?: boolean;
   error?: any;
+  onDeleteSuccess?: () => void;
 }) {
   const [data, setData] = React.useState(() => initialData?.data || initialData || []);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
   const { id: selectedIds, count, updateStore } = useEventStore();
 
   // Update data when initialData changes
@@ -257,6 +270,63 @@ export function Events({
       toast.error(error.message || "Failed to load data");
     }
   }, [error]);
+
+  // Delete function with proper error handling
+  const handleDelete = async () => {
+    if (selectedIds.length === 0) {
+      toast.error("No events selected");
+      return;
+    }
+
+    setIsDeleting(true);
+    
+    try {
+      console.log("Deleting events with IDs:", selectedIds);
+      
+      // Show loading toast
+      const loadingToast = toast.loading(`Deleting ${selectedIds.length} event(s)...`);
+      
+      // Call delete API
+      const response = await instance.delete("/event/delete", {
+        data: { ids: selectedIds }
+      });
+      
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+      
+      if (response.status === 200) {
+        // Optimistically update local data
+        setData((prevData: any[]) => 
+          prevData.filter(item => !selectedIds.includes(item.public_id))
+        );
+        
+        // Reset selection
+        updateStore({ id: [], count: 0 });
+        
+        // Show success message
+        toast.success(`Successfully deleted ${selectedIds.length} event(s)`);
+        
+        // Refresh data from server
+        if (onDeleteSuccess) {
+          onDeleteSuccess();
+        }
+      } else {
+        throw new Error(`Server responded with status ${response.status}`);
+      }
+    } catch (error: any) {
+      console.error("Error deleting events:", error);
+      
+      // Show error message
+      toast.error(
+        error.response?.data?.message || 
+        error.message || 
+        "Failed to delete events. Please try again."
+      );
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
 
   const table = useReactTable({
     data,
@@ -285,21 +355,42 @@ export function Events({
                 {count} of{" "}
                 {data.length} row(s) selected
               </span>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={async () => {
-                  console.log("Selected events for deletion:", selectedIds);
-                  // Add your delete logic here
-                  await instance.delete("/event/delete", {
-                    data: { ids: selectedIds }
-                  })
-                  // Reset selection after action
-                  updateStore({ id: [], count: 0 });
-                }}
-              >
-                Delete Selected
-              </Button>
+              <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={isDeleting || selectedIds.length === 0}
+                  >
+                    Delete Selected
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Confirm Deletion</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to delete {selectedIds.length} selected event(s)? 
+                      This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowDeleteDialog(false)}
+                      disabled={isDeleting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "Deleting..." : "Delete"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           )}
         </div>

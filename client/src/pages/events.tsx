@@ -4,7 +4,7 @@ import { useMediaData } from "@/hooks/useMediaData";
 import { useMemo } from "react";
 
 export default function EventsPage() {
-    const { data, error, isLoading } = useMediaData("/events");
+    const { data, error, isLoading, refetch } = useMediaData("/events");
 
     const events = useMemo(() => {
         let eventsArray: any[] = [];
@@ -42,6 +42,7 @@ export default function EventsPage() {
                         data={events || sampleEvents}
                         isLoading={isLoading}
                         error={error}
+                        onDeleteSuccess={refetch}
                     />
                 </div>
             </div>
