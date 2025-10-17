@@ -13,7 +13,7 @@ const HEADS = {
 };
 
 export default function GalleryHeader({ prop }: { prop: keyof typeof PROPS }) {
-  const { resetStore, getSelection } = useMediaStore();
+  const { resetStore, getSelection, selections } = useMediaStore();
   const { count } = getSelection(prop);
   const location = useLocation();
 
@@ -21,7 +21,7 @@ export default function GalleryHeader({ prop }: { prop: keyof typeof PROPS }) {
   const formattedProp = prop.charAt(0).toUpperCase() + prop.slice(1);
 
   const handleDelete = () => {
-    resetStore(prop);
+    console.log(selections)
   };
 
   return (

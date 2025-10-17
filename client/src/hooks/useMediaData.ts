@@ -17,6 +17,8 @@ export type ImageItem = {
   id: string;
   name: string;
   src: string;
+  // All additional properties from backend
+  [key: string]: any;
 };
 
 const ENDPOINT_MAP = {
@@ -81,8 +83,11 @@ export function getItemsForProp(
   if (!Array.isArray(items)) return [];
   
   return items.map(item => ({
-    id: item.id || `${prop}-${Math.random()}`,
-    name: item.name || `${prop} image`,
+    // Pass through all properties first
+    ...item,
+    // Override with standardized properties
+    id: item.public_id || item.id || `${prop}-${Math.random()}`,
+    name: item.name || item.title || `${prop} image`,
     src: item.src || item.url || '/test.png',
   }));
 }

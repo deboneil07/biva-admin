@@ -8,9 +8,11 @@ import { Spinner } from "./ui/spinner";
 export default function Gallery({prop} : {prop: keyof typeof PROPS}) {
   const location = useLocation();
   const { data, isLoading, error } = useMediaData(location.pathname);
+  console.log(data)
   
   // Get the actual items for this specific prop
   const items = getItemsForProp(data, prop);
+  // console.log(items);
 
   if (isLoading) {
     return (
@@ -47,10 +49,8 @@ export default function Gallery({prop} : {prop: keyof typeof PROPS}) {
           {items.map((item) => (
             <ImageCard
               key={item.id}
-              id={item.id}
-              name={item.name}
-              src={item.src}
               prop={prop}
+              {...item}
             />
           ))}
         </div>
