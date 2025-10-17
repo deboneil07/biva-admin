@@ -45,6 +45,16 @@ export class CloudinaryService {
     });
   }
 
+  async deleteImageVideo(public_id: string[]) {
+    try {
+      const res = await Cloudinary.api.delete_resources(public_id);
+      return res;
+    } catch (err) {
+      console.error("deleteImageVideoService error:", err);
+      throw err;
+    }
+  }
+
   async listImages(folderPrefix = "", dynamicMode = false): Promise<any[]> {
     let resources: any[] = [];
     let nextCursor: string | undefined = undefined;
@@ -93,13 +103,13 @@ export class CloudinaryService {
   async listByMetadata(
     metadataKey: string,
     metadataValue: string,
-    folder: string
+    folder: string,
   ): Promise<any[]> {
     try {
-      console.log(metadataKey, metadataValue)
-      const expr = `context.${metadataKey}=${metadataValue}`
+      console.log(metadataKey, metadataValue);
+      const expr = `context.${metadataKey}=${metadataValue}`;
 
-      const exp = `folder:"${folder}" AND ${expr}` 
+      const exp = `folder:"${folder}" AND ${expr}`;
 
       const res = await Cloudinary.search
         .expression(exp)

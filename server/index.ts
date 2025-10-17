@@ -5,7 +5,11 @@ import { cors } from "hono/cors";
 import { adminRouter } from "./controller/adminRouter";
 import { serve } from "bun";
 import { getBookingsRouter } from "./controller/getBookings";
-import { getImage, uploadImageVideoController } from "./controller/imageController";
+import {
+  deleteMediaController,
+  getImage,
+  uploadImageVideoController,
+} from "./controller/imageController";
 
 const app = new Hono();
 app.use(
@@ -23,6 +27,7 @@ app.route("/admin", adminRouter);
 app.get("/get-media/:folder", getImage);
 app.route("/get-bookings", getBookingsRouter);
 app.post("/upload-media", uploadImageVideoController);
+app.post("/delete-media", deleteMediaController);
 
 serve({
   fetch: app.fetch,

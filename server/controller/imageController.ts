@@ -49,12 +49,19 @@ export const getImage = async (c: Context) => {
     // };
 
     if (param.includes("hotel")) {
-      const HotelHeroItems = await cloudService.listByMetadata("position", "hero", param);
+      const HotelHeroItems = await cloudService.listByMetadata(
+        "position",
+        "hero",
+        param,
+      );
       // const heroItems = filterByPosition(itemsWithPosition, "hero");
-      console.log("hero itemns", HotelHeroItems)
+      console.log("hero itemns", HotelHeroItems);
       // const banquetItems = filterByPosition(itemsWithPosition, "banquet");
-      const HotelBanquetItems = await cloudService.listByMetadata("position", "banquet", param);
-
+      const HotelBanquetItems = await cloudService.listByMetadata(
+        "position",
+        "banquet",
+        param,
+      );
 
       const hero: HotelHero[] = HotelHeroItems.map((itm) => ({
         public_id: itm.public_id,
@@ -98,9 +105,16 @@ export const getImage = async (c: Context) => {
     } else if (param.includes("food-court")) {
       // const foodCourtItems = await cloudService.listImages("food-court", true);
       // const heroItems = filterByPosition(foodCourtItems, "hero");
-      const FoodCourtHeroItems = await cloudService.listByMetadata("position", "hero", param);
-      const FoodCourtPreference = await cloudService.listByMetadata("position", "name", param);
-
+      const FoodCourtHeroItems = await cloudService.listByMetadata(
+        "position",
+        "hero",
+        param,
+      );
+      const FoodCourtPreference = await cloudService.listByMetadata(
+        "position",
+        "name",
+        param,
+      );
 
       const hero: HotelHero[] = FoodCourtHeroItems.map((itm) => ({
         public_id: itm.public_id,
@@ -116,7 +130,7 @@ export const getImage = async (c: Context) => {
           public_id: itm.public_id,
           url: itm.secure_url,
           name: itm?.context.name,
-        })
+        });
       });
 
       return c.json({
@@ -126,9 +140,13 @@ export const getImage = async (c: Context) => {
         },
       });
     } else if (param.includes("hotel-rooms")) {
-      const roomItems = await cloudService.listByMetadata("position", "rooms", param);
+      const roomItems = await cloudService.listByMetadata(
+        "position",
+        "rooms",
+        param,
+      );
       // const roomFiltered = filterByPosition(roomItems, "rooms");
-      console.log("roomitems", roomItems)
+      console.log("roomitems", roomItems);
       const rooms: GroupedRooms[] = roomItems.map((itm) => ({
         public_id: itm.public_id,
         url: itm.secure_url,
@@ -140,14 +158,17 @@ export const getImage = async (c: Context) => {
       return c.json({ rooms });
     } else if (param.includes("bakery")) {
       const bakeryImages = await cloudService.listImagesByTags(bakeryTypes);
-            const bakeryHero = await cloudService.listByMetadata("position", "hero", param);
+      const bakeryHero = await cloudService.listByMetadata(
+        "position",
+        "hero",
+        param,
+      );
 
       const hero: HotelHero[] = bakeryHero.map((itm) => ({
         public_id: itm.public_id,
         url: itm.secure_url,
         position: itm.context.position,
       }));
-
 
       const groupedItems: GroupedBakeryItems = {
         bread: [],
@@ -172,7 +193,7 @@ export const getImage = async (c: Context) => {
       });
 
       return c.json({
-        data: {hero:hero, groupedItems},
+        data: { hero: hero, groupedItems },
       });
     } else {
       const images = await cloudService.listImages(param);
@@ -226,10 +247,29 @@ export const uploadImageVideoController = async (
   }
 };
 
-
 export const uploadMediaMethod = async (file: File, folder: string) => {
   const res = await cloudService.uploadMedia(file, {
-    folder
+    folder,
   });
   return res;
-}
+};
+export const deleteMediaController = async (c: Context) => {
+  try {
+    const body = c.req.json();
+    const public_ids: string[] = body.public_ids;
+    if (!Array.isArray(public_ids) || public_ids.length == 0) {
+      return c.json(
+        { success: false, message: "public_ids must be non-empty array" },
+        400,
+      );
+    }
+    const res = await cloudService.deleteImageVideo(public_ids);
+    return c.json({ success: true, res }, 200);
+  } catch (err: any) {
+    console.error("deleteMediaController error:", err);
+    return c.json(
+      { success: false, message: err.message || "Delete failed" },
+      500,
+    );
+  }
+};
