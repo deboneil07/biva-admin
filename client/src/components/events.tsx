@@ -66,8 +66,8 @@ export type TableDataType = {
 
 export const schema = z.object({
   event_id: z.string().optional(),
-  price: z.string().optional(),
-  name: z.string().optional(),
+  event_price: z.string().optional(),
+  event_name: z.string().optional(),
   group_name: z.string().optional(),
   date: z.string().optional(),
   time: z.string().optional(),
@@ -89,7 +89,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     header: "Event Name",
     cell: ({ row }) => (
       <div className="text-sm font-medium">
-        {row.original.name || "No name available"}
+        {row.original.event_name || "No name available"}
       </div>
     ),
   },
@@ -355,7 +355,7 @@ function TableCellViewer({
             {item.name && (
               <div className="flex flex-col gap-3">
                 <Label htmlFor="event_name">Event Name</Label>
-                <Input id="event_name" defaultValue={item.name} disabled className="bg-muted" />
+                <Input id="event_name" defaultValue={item.event_name} disabled className="bg-muted" />
               </div>
             )}
             {item.group_name && (

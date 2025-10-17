@@ -85,10 +85,10 @@ export const getImage = async (c: Context) => {
       console.log(events[0]);
       return c.json({
         events: events.map((img) => ({
-          event_name: img.context?.custom?.id,
-          event_id: img.context?.custom?.id,
-          ticket_price: img.context?.custom?.price,
-          name: img.context?.custom?.name,
+          // event_name: img.context?.custom?.id,
+          event_id: img.context?.custom?.event_id,
+          ticket_price: img.context?.custom?.ticket_price,
+          event_name: img.context?.custom?.event_name,
           group_name: img.context?.custom?.group_name,
           date: img.context?.custom?.date,
           time: img.context?.custom?.time,
