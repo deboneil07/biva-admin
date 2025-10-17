@@ -82,6 +82,7 @@ export const getImage = async (c: Context) => {
       });
     } else if (param.includes("events")) {
       const events = await cloudService.listImages("events", true);
+      console.log(events[0]);
       return c.json({
         events: events.map((img) => ({
           event_name: img.context?.custom?.id,

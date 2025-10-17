@@ -2,7 +2,6 @@ import {
   pgTable,
   unique,
   integer,
-  uuid,
   text,
   serial,
   boolean,
@@ -22,16 +21,24 @@ export const role = pgEnum("role", [
 export const adminEventTable = pgTable(
   "adminEventTable",
   {
-    id: serial().primaryKey().notNull().unique(),
-    event_id: uuid("event_id").notNull(),
-    event_name: text("event_name").notNull(),
-    group_name: text("group_name").notNull(),
-    ticket_price: integer("ticket_price").default(0).notNull(),
+    id: integer()
+      .primaryKey()
+      .generatedAlwaysAsIdentity({
+        name: "adminFoodCourtTable_id_seq",
+        startWith: 1,
+        increment: 1,
+        minValue: 1,
+        maxValue: 2147483647,
+      }),
+    eventId: text("event_id").notNull(),
+    eventName: text("event_name").notNull(),
+    groupName: text("group_name").notNull(),
+    ticketPrice: integer("ticket_price").default(0).notNull(),
     date: text().notNull(),
     time: text().notNull(),
     banner: text().notNull(),
   },
-  (table) => [unique("adminFoodCourtTable_table_name_key").on(table.event_id)],
+  (table) => [unique("adminFoodCourtTable_table_name_key").on(table.eventId)],
 );
 
 export const adminHotelRoomReservation = pgTable(
@@ -54,7 +61,7 @@ export const hotelRoomReservation = pgTable(
   "hotelRoomReservation",
   {
     id: serial().primaryKey().notNull(),
-    applicationId: text("application_id").default(gen_random_uuid()).notNull(),
+    applicationId: text("application_id").default("").notNull(),
     roomNumber: text("room_number").array().default([""]),
     name: text().notNull(),
     email: text().notNull(),

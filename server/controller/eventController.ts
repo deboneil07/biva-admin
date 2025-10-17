@@ -11,17 +11,15 @@ export const eventRouter = new Hono();
 eventRouter.post("/create", async (c: Context) => {
   try {
     const body = await c.req.parseBody();
-
-    const event_name =
-      typeof body["event_name"] === "string" ? body["event_name"] : null;
+    console.log(body);
+    const event_name = typeof body["name"] === "string" ? body["name"] : null;
     const group_name =
       typeof body["group_name"] === "string" ? body["group_name"] : null;
     const ticket_price_str =
-      typeof body["ticket_price"] === "string" ? body["ticket_price"] : null;
+      typeof body["price"] === "string" ? body["price"] : null;
     const date = typeof body["date"] === "string" ? body["date"] : null;
     const time = typeof body["time"] === "string" ? body["time"] : null;
-    const image =
-      body["image"] instanceof File ? (body["image"] as File) : null;
+    const image = body["file"] instanceof File ? (body["file"] as File) : null;
 
     if (
       event_name === null ||
@@ -60,10 +58,10 @@ eventRouter.post("/create", async (c: Context) => {
     const newEvent = await db
       .insert(adminEventTable)
       .values({
-        event_id: uuid,
-        event_name: event_name,
-        group_name: group_name,
-        ticket_price: parseInt(ticket_price_str),
+        eventId: uuid,
+        eventName: event_name,
+        groupName: group_name,
+        ticketPrice: parseInt(ticket_price_str),
         date: date,
         time: time,
         banner: banner,
