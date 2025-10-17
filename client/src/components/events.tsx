@@ -24,10 +24,14 @@ import {
   getCoreRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -76,6 +80,55 @@ export const schema = z.object({
 });
 
 const columns: ColumnDef<z.infer<typeof schema>>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <div className="flex items-center justify-center">
+        <Checkbox
+          checked={false} // We'll handle this manually
+          onCheckedChange={() => {
+            // Simple select all/none toggle
+            const { id: selectedIds, updateStore } = useEventStore.getState();
+            if (selectedIds.length > 0) {
+              updateStore({ id: [], count: 0 });
+            } else {
+              const allIds = table.getRowModel().rows.map(row => row.original.public_id);
+              updateStore({ id: allIds, count: allIds.length });
+            }
+          }}
+          aria-label="Select all"
+          className="translate-y-[2px]"
+        />
+      </div>
+    ),
+    cell: ({ row }) => {
+      const { id: selectedIds, updateStore } = useEventStore();
+      const isSelected = selectedIds.includes(row.original.public_id);
+      
+      return (
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={(value) => {
+              if (value) {
+                // Add to selection
+                const newIds = [...selectedIds, row.original.public_id];
+                updateStore({ id: newIds, count: newIds.length });
+              } else {
+                // Remove from selection
+                const newIds = selectedIds.filter(id => id !== row.original.public_id);
+                updateStore({ id: newIds, count: newIds.length });
+              }
+            }}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        </div>
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: "event_id",
     header: "Event ID",
@@ -171,6 +224,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 
 import { Spinner } from "./ui/spinner";
 import { toast } from "sonner";
+import { useEventStore } from "@/store/event-store";
 
 
 export function Events({
@@ -183,6 +237,7 @@ export function Events({
   error?: any;
 }) {
   const [data, setData] = React.useState(() => initialData?.data || initialData || []);
+  const { id: selectedIds, count, updateStore } = useEventStore();
 
   // Update data when initialData changes
   React.useEffect(() => {
@@ -191,7 +246,9 @@ export function Events({
     } else if (initialData) {
       setData(initialData);
     }
-  }, [initialData]);
+    // Reset selections when data changes
+    updateStore({ id: [], count: 0 });
+  }, [initialData, updateStore]);
 
   // Show error toast when error occurs
   React.useEffect(() => {
@@ -204,6 +261,9 @@ export function Events({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
@@ -216,6 +276,29 @@ export function Events({
       <div className="flex items-center justify-between px-4 lg:px-6">
         <div>
           <h1 className="text-5xl font-bold">Events</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          {count > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {count} of{" "}
+                {data.length} row(s) selected
+              </span>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  console.log("Selected events for deletion:", selectedIds);
+                  // Add your delete logic here
+                  toast.success(`${selectedIds.length} events selected for deletion`);
+                  // Reset selection after action
+                  updateStore({ id: [], count: 0 });
+                }}
+              >
+                Delete Selected
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -293,6 +376,7 @@ export function Events({
             </TableBody>
           </Table>
         </div>
+
       </TabsContent>
     </Tabs>
   );
@@ -355,7 +439,7 @@ function TableCellViewer({
             {item.name && (
               <div className="flex flex-col gap-3">
                 <Label htmlFor="event_name">Event Name</Label>
-                <Input id="event_name" defaultValue={item.event_name} disabled className="bg-muted" />
+                <Input id="event_name" defaultValue={item.name} disabled className="bg-muted" />
               </div>
             )}
             {item.group_name && (
