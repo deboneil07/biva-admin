@@ -66,8 +66,8 @@ export type TableDataType = {
 
 export const schema = z.object({
   event_id: z.string().optional(),
-  event_price: z.string().optional(),
-  event_name: z.string().optional(),
+  price: z.string().optional(),
+  name: z.string().optional(),
   group_name: z.string().optional(),
   date: z.string().optional(),
   time: z.string().optional(),
@@ -89,7 +89,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     header: "Event Name",
     cell: ({ row }) => (
       <div className="text-sm font-medium">
-        {row.original.event_name || "No name available"}
+        {row.original.name || "No name available"}
       </div>
     ),
   },
