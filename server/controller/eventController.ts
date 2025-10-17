@@ -83,3 +83,14 @@ eventRouter.post("/create", async (c: Context) => {
     return c.json({ error: "Failed to create event" }, 500);
   }
 });
+
+eventRouter.delete("/delete", async (c: Context) => {
+  const eventToDelete = await c.req.json();
+  if (!eventToDelete) {
+    return c.json({ error: "Missing event ID" }, 400);
+  }
+
+  const deleteEvent = await db
+    .delete(adminEventTable)
+    .where(eq(adminEventTable.event_id, eventToDelete));
+});

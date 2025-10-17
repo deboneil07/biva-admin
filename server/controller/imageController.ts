@@ -84,13 +84,15 @@ export const getImage = async (c: Context) => {
       const events = await cloudService.listImages("events", true);
       return c.json({
         events: events.map((img) => ({
-          event_id: img.context?.id,
-          price: img.context?.price,
-          name: img.context?.name,
-          group_name: img.context?.group_name,
-          date: img.context?.date,
-          time: img.context?.time,
+          event_name: img.context?.custom?.id,
+          event_id: img.context?.custom?.id,
+          ticket_price: img.context?.custom?.price,
+          name: img.context?.custom?.name,
+          group_name: img.context?.custom?.group_name,
+          date: img.context?.custom?.date,
+          time: img.context?.custom?.time,
           public_id: img.public_id,
+          position: img.context?.custom?.position,
           url: img.secure_url,
         })),
       });
