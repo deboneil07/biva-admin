@@ -225,6 +225,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 import { Spinner } from "./ui/spinner";
 import { toast } from "sonner";
 import { useEventStore } from "@/store/event-store";
+import { instance } from "@/utils/axios";
 
 
 export function Events({
@@ -287,10 +288,12 @@ export function Events({
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => {
+                onClick={async () => {
                   console.log("Selected events for deletion:", selectedIds);
                   // Add your delete logic here
-                  toast.success(`${selectedIds.length} events selected for deletion`);
+                  await instance.delete("/event/delete", {
+                    data: { ids: selectedIds }
+                  })
                   // Reset selection after action
                   updateStore({ id: [], count: 0 });
                 }}
