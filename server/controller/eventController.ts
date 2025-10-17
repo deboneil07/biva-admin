@@ -1,7 +1,10 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
-import { type UploadFileResult } from "../utils/cloudinary-service";
-import { uploadMediaMethod } from "./imageController";
+import {
+  CloudinaryService,
+  type UploadFileResult,
+} from "../utils/cloudinary-service";
+import { deleteMediaFunction, uploadMediaMethod } from "./imageController";
 import { db } from "../db";
 import { adminEventTable } from "../drizzle/schema";
 import { generate_uuid } from "../utils/uuid";
@@ -101,13 +104,19 @@ eventRouter.delete("/delete", async (c: Context) => {
 
     const deletedEvents = await db
       .delete(adminEventTable)
-      .where(inArray(adminEventTable.event_id, eventIdsToDelete))
+      .where(inArray(adminEventTable.eventId, eventIdsToDelete))
       .returning({
-        event_id: adminEventTable.event_id,
-        event_name: adminEventTable.event_name,
+        event_id: adminEventTable.eventId,
+        event_name: adminEventTable.eventName,
+        event_img: adminEventTable.banner,
       });
 
-    if (deletedEvents.length == 0) {
+    const imagesToDelete: string[] = deletedEvents.map((eve) => {
+      return eve.event_img;
+    });
+    const deletedImages = await deleteMediaFunction(imagesToDelete);
+
+    if (deletedEvents.length == 0 || deletedImages.length == 0) {
       return c.json(
         {
           success: true,
@@ -124,6 +133,7 @@ eventRouter.delete("/delete", async (c: Context) => {
         message: `${deletedEvents.length} events deleted successfully`,
         deleted_count: deletedEvents.length,
         deleted_events: deletedEvents,
+        deleted_img: deletedImages,
       },
       200,
     );

@@ -281,3 +281,12 @@ export const deleteMediaController = async (c: Context) => {
     );
   }
 };
+
+export const deleteMediaFunction = async (public_ids: string[]) => {
+  if (!Array.isArray(public_ids) || public_ids.length === 0) {
+    throw new Error("publicIds must be a non-empty array of strings.");
+  }
+
+  const res = await cloudService.deleteImageVideo(public_ids);
+  return res;
+};
