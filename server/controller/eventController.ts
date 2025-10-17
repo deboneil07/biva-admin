@@ -8,7 +8,9 @@ import { deleteMediaFunction, uploadMediaMethod } from "./imageController";
 import { db } from "../db";
 import { adminEventTable } from "../drizzle/schema";
 import { generate_uuid } from "../utils/uuid";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, is } from "drizzle-orm";
+import { convertUrlsToPublicId } from "../utils/getPublicIdFromUrl";
+import { string } from "better-auth";
 
 export const eventRouter = new Hono();
 
@@ -111,12 +113,7 @@ eventRouter.delete("/delete", async (c: Context) => {
         event_img: adminEventTable.banner,
       });
 
-    const imagesToDelete: string[] = deletedEvents.map((eve) => {
-      return eve.event_img;
-    });
-    const deletedImages = await deleteMediaFunction(imagesToDelete);
-
-    if (deletedEvents.length == 0 || deletedImages.length == 0) {
+    if (deletedEvents.length == 0) {
       return c.json(
         {
           success: true,
@@ -127,12 +124,22 @@ eventRouter.delete("/delete", async (c: Context) => {
       );
     }
 
+    const publicIdPromises = deletedEvents.map((eve) =>
+      convertUrlsToPublicId(eve.event_img),
+    );
+    const resolvedPublicIds = await Promise.all(publicIdPromises);
+    const imagesToDelete: string[] = resolvedPublicIds.filter(
+      (id): id is string => id !== null && id !== undefined,
+    );
+
+    const deletedImages = await deleteMediaFunction(imagesToDelete);
+
     return c.json(
       {
         success: true,
         message: `${deletedEvents.length} events deleted successfully`,
         deleted_count: deletedEvents.length,
-        deleted_events: deletedEvents,
+        deleted_events: deletedEvents.map((e) => e.event_id),
         deleted_img: deletedImages,
       },
       200,
