@@ -28,6 +28,7 @@ type GroupedRooms = {
   desc: string;
   price: string;
   room_id: string | undefined;
+  room_type: string | undefined;
 };
 
 type HotelHero = {
@@ -48,14 +49,14 @@ export const getImage = async (c: Context) => {
     //   return items.filter((itm) => itm.context?.position === position);
     // };
 
-    if (param.includes("hotel")) {
+    if (param === "hotel") {
       const HotelHeroItems = await cloudService.listByMetadata(
         "position",
         "hero",
         param,
       );
       // const heroItems = filterByPosition(itemsWithPosition, "hero");
-      console.log("hero itemns", HotelHeroItems);
+      console.log("hero items", HotelHeroItems);
       // const banquetItems = filterByPosition(itemsWithPosition, "banquet");
       const HotelBanquetItems = await cloudService.listByMetadata(
         "position",
@@ -142,7 +143,7 @@ export const getImage = async (c: Context) => {
           preferences,
         },
       });
-    } else if (param.includes("hotel-rooms")) {
+    } else if (param === "hotel-rooms") {
       const roomItems = await cloudService.listByMetadata(
         "position",
         "rooms",
