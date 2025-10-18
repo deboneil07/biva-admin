@@ -41,22 +41,6 @@ export const adminEventTable = pgTable(
   (table) => [unique("adminFoodCourtTable_table_name_key").on(table.eventId)],
 );
 
-export const adminHotelRoomReservation = pgTable(
-  "adminHotelRoomReservation",
-  {
-    roomId: serial("room_id").primaryKey().notNull(),
-    roomNumber: text("room_number").notNull(),
-    typeOfRoom: text("type_of_room").notNull(),
-    floor: integer().notNull(),
-    occupancy: integer().notNull(),
-    price: integer().notNull(),
-    occupied: boolean().default(false).notNull(),
-  },
-  (table) => [
-    unique("adminHotelRoomReservation_room_number_unique").on(table.roomNumber),
-  ],
-);
-
 export const hotelRoomReservation = pgTable(
   "hotelRoomReservation",
   {
@@ -82,6 +66,23 @@ export const hotelRoomReservation = pgTable(
     unique("hotelRoomReservation_room_number_unique").on(table.roomNumber),
     unique("hotelRoomReservation_email_unique").on(table.email),
     unique("hotelRoomReservation_phone_number_unique").on(table.phoneNumber),
+  ],
+);
+
+export const adminHotelRoomReservation = pgTable(
+  "adminHotelRoomReservation",
+  {
+    roomId: serial("room_id").primaryKey().notNull(),
+    roomNumber: text("room_number").notNull(),
+    typeOfRoom: text("type_of_room").notNull(),
+    floor: integer().notNull(),
+    occupancy: integer().notNull(),
+    price: integer().notNull(),
+    occupied: boolean().default(false).notNull(),
+    roomImage: text("room-image").notNull(),
+  },
+  (table) => [
+    unique("adminHotelRoomReservation_room_number_unique").on(table.roomNumber),
   ],
 );
 

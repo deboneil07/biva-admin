@@ -1,16 +1,12 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
-import {
-  CloudinaryService,
-  type UploadFileResult,
-} from "../utils/cloudinary-service";
+import { type UploadFileResult } from "../utils/cloudinary-service";
 import { deleteMediaFunction, uploadMediaMethod } from "./imageController";
 import { db } from "../db";
 import { adminEventTable } from "../drizzle/schema";
 import { generate_uuid } from "../utils/uuid";
-import { eq, inArray, is } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { convertUrlsToPublicId } from "../utils/getPublicIdFromUrl";
-import { string } from "better-auth";
 
 export const eventRouter = new Hono();
 
@@ -113,7 +109,7 @@ eventRouter.delete("/delete", async (c: Context) => {
         event_img: adminEventTable.banner,
       });
 
-    if (deletedEvents.length == 0) {
+    if (deletedEvents.length === 0) {
       return c.json(
         {
           success: true,
