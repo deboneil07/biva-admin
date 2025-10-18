@@ -50,6 +50,7 @@ export function RoomUpload({ prop }: { prop: keyof typeof PROPS }) {
     
     // Fetch existing room types
     const { data: roomTypesData, isLoading: isLoadingRoomTypes } = useRoomTypes();
+    const createRoomTypeMutation = useCreateRoomType();
 
     const fields = PROPS[prop];
     const folder = FOLDER_MAP[location.pathname as keyof typeof FOLDER_MAP];
