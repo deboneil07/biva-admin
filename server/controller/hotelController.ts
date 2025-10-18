@@ -8,6 +8,8 @@ import { convertUrlsToPublicId } from "../utils/getPublicIdFromUrl";
 
 export const hotelRouter = new Hono();
 
+hotelRouter.get("/type-of-rooms", async (c: Context) => {});
+
 hotelRouter.post("/create", async (c: Context) => {
   try {
     const body = await c.req.parseBody();
@@ -23,6 +25,8 @@ hotelRouter.post("/create", async (c: Context) => {
       typeof body["occupancy"] === "string"
         ? parseInt(body["occupancy"])
         : null;
+    const description =
+      typeof body["description"] === "string" ? body["description"] : null;
     const price =
       typeof body["price"] === "string" ? parseInt(body["price"]) : null;
     const occupied =
@@ -44,6 +48,7 @@ hotelRouter.post("/create", async (c: Context) => {
     const uploadHotelImage: UploadFileResult | undefined =
       await uploadMediaMethod(hotel_image, "hotel-rooms", {
         Price: price.toString(),
+        Description: description || "",
       });
 
     if (!uploadHotelImage?.secure_url || !uploadHotelImage?.optimized_url) {
