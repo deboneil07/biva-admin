@@ -25,6 +25,16 @@ import {
 } from "@tanstack/react-table";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -55,7 +65,9 @@ export type TableDataType = {
   url: string;
   desc: string;
   price: string;
+  room_type: string;
   room_id?: string;
+  room_number?: string;
 }
 
 export const schema = z.object({
@@ -63,10 +75,66 @@ export const schema = z.object({
   url: z.string(),
   desc: z.string(),
   price: z.string(),
+  room_type: z.string(),
   room_id: z.string().optional(),
+  room_number: z.string().optional(),
 });
 
-const columns: ColumnDef<z.infer<typeof schema>>[] = [
+// Create columns as a function to use the room store
+const createColumns = (allRoomData: any[]): ColumnDef<z.infer<typeof schema>>[] => [
+  {
+    id: "select",
+    header: () => {
+      const { id: selectedIds, updateStore } = useRoomStore.getState();
+      const allRoomNumbers = allRoomData.map(room => room.room_number || room.public_id);
+      const isAllSelected = selectedIds.length === allRoomNumbers.length && allRoomNumbers.length > 0;
+      
+      return (
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={isAllSelected}
+            onCheckedChange={(value) => {
+              if (value) {
+                updateStore({ id: allRoomNumbers, count: allRoomNumbers.length });
+              } else {
+                updateStore({ id: [], count: 0 });
+              }
+            }}
+            aria-label="Select all"
+            className="translate-y-[2px]"
+          />
+        </div>
+      );
+    },
+    cell: ({ row }) => {
+      const { id: selectedIds, updateStore } = useRoomStore();
+      const roomNumber = row.original.room_number || row.original.public_id;
+      const isSelected = selectedIds.includes(roomNumber);
+      
+      return (
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={(value) => {
+              if (value) {
+                // Add to selection
+                const newIds = [...selectedIds, roomNumber];
+                updateStore({ id: newIds, count: newIds.length });
+              } else {
+                // Remove from selection
+                const newIds = selectedIds.filter(id => id !== roomNumber);
+                updateStore({ id: newIds, count: newIds.length });
+              }
+            }}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        </div>
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: "room_id",
     header: "Room ID",
@@ -90,6 +158,15 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     cell: ({ row }) => (
       <div className="text-sm max-w-xs truncate">
         {row.original.desc}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "room_type",
+    header: "Room Type",
+    cell: ({ row }) => (
+      <div className="text-sm font-medium capitalize">
+        {row.original.room_type}
       </div>
     ),
   },
@@ -144,18 +221,25 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 
 import { Spinner } from "./ui/spinner";
 import { toast } from "sonner";
+import { instance } from "@/utils/axios";
+import { useRoomStore } from "@/store/room-store";
 
 
 export function HotelRooms({
   data: initialData,
   isLoading,
   error,
+  onDeleteSuccess,
 }: {
   data?: z.infer<typeof schema>[] | any;
   isLoading?: boolean;
   error?: any;
+  onDeleteSuccess?: () => void;
 }) {
   const [data, setData] = React.useState(() => initialData?.data || initialData || []);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+  const { id: selectedIds, count, updateStore } = useRoomStore();
 
   // Update data when initialData changes
   React.useEffect(() => {
@@ -164,7 +248,9 @@ export function HotelRooms({
     } else if (initialData) {
       setData(initialData);
     }
-  }, [initialData]);
+    // Reset selections when data changes
+    updateStore({ id: [], count: 0 });
+  }, [initialData, updateStore]);
 
   // Show error toast when error occurs
   React.useEffect(() => {
@@ -172,6 +258,69 @@ export function HotelRooms({
       toast.error(error.message || "Failed to load data");
     }
   }, [error]);
+
+  // Delete function with proper error handling
+  const handleDelete = async () => {
+    if (selectedIds.length === 0) {
+      toast.error("No rooms selected");
+      return;
+    }
+
+    setIsDeleting(true);
+    
+    try {
+      console.log("Deleting rooms with IDs:", selectedIds);
+      
+      // Show loading toast
+      const loadingToast = toast.loading(`Deleting ${selectedIds.length} room(s)...`);
+      
+      // Call delete API
+      const response = await instance.delete("/room/delete", {
+        data: { ids: selectedIds }
+      });
+      
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+      
+      if (response.status === 200) {
+        // Optimistically update local data
+        setData((prevData: any[]) => 
+          prevData.filter(item => !selectedIds.includes(item.public_id))
+        );
+        
+        // Reset selection
+        updateStore({ id: [], count: 0 });
+        
+        // Show success message
+        toast.success(`Successfully deleted ${selectedIds.length} room(s)`);
+        
+        // Refresh data from server
+        if (onDeleteSuccess) {
+          onDeleteSuccess();
+        }
+      } else {
+        throw new Error(`Server responded with status ${response.status}`);
+      }
+    } catch (error: any) {
+      console.error("Error deleting rooms:", error);
+      
+      // Show error message
+      toast.error(
+        error.response?.data?.message || 
+        error.message || 
+        "Failed to delete rooms. Please try again."
+      );
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  // Get all room IDs for selection logic
+  const allRoomIds = data.map((room: any) => room.public_id);
+  
+  // Create columns with room store
+  const columns = createColumns(allRoomIds);
 
   const table = useReactTable({
     data,
@@ -189,6 +338,52 @@ export function HotelRooms({
       <div className="flex items-center justify-between px-4 lg:px-6">
         <div>
           <h1 className="text-5xl font-bold">Hotel Rooms</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          {count > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {count} of{" "}
+                {data.length} room(s) selected
+              </span>
+              <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={isDeleting || selectedIds.length === 0}
+                  >
+                    Delete Selected
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Confirm Deletion</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to delete {selectedIds.length} selected room(s)? 
+                      This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowDeleteDialog(false)}
+                      disabled={isDeleting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "Deleting..." : "Delete"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
         </div>
       </div>
 
@@ -330,6 +525,10 @@ function TableCellViewer({
               <Input id="description" defaultValue={item.desc} disabled className="bg-muted" />
             </div>
             <div className="flex flex-col gap-3">
+              <Label htmlFor="room_type">Room Type</Label>
+              <Input id="room_type" defaultValue={item.room_type} disabled className="bg-muted capitalize" />
+            </div>
+            <div className="flex flex-col gap-3">
               <Label htmlFor="price">Price</Label>
               <Input 
                 id="price" 
@@ -365,6 +564,7 @@ export const sampleHotelRooms: TableDataType[] = [
     url: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop",
     desc: "Deluxe room with city view and modern amenities",
     price: "5000",
+    room_type: "deluxe",
     room_id: "R001"
   },
   {
@@ -372,6 +572,7 @@ export const sampleHotelRooms: TableDataType[] = [
     url: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
     desc: "Luxury suite with panoramic view",
     price: "8500",
+    room_type: "suite",
     room_id: "R002"
   },
   {
@@ -379,12 +580,14 @@ export const sampleHotelRooms: TableDataType[] = [
     url: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop",
     desc: "Standard room with essential amenities",
     price: "3000",
+    room_type: "standard",
     room_id: "R003"
   },
   {
     public_id: "hotel_room_premium_004",
     url: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop",
     desc: "Premium room with balcony access",
-    price: "no price available"
+    price: "no price available",
+    room_type: "premium"
   }
 ];

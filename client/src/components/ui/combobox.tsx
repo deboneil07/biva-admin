@@ -1,14 +1,5 @@
 import * as React from "react";
-import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export interface ComboboxOption {
   value: string;
@@ -23,7 +14,6 @@ interface CreatableSelectProps {
   disabled?: boolean;
   className?: string;
   name?: string;
-  onCreate?: (value: string) => Promise<void> | void;
 }
 
 export function CreatableSelect({
@@ -34,119 +24,71 @@ export function CreatableSelect({
   disabled = false,
   className,
   name,
-  onCreate,
 }: CreatableSelectProps) {
-  const [isCustomMode, setIsCustomMode] = React.useState(false);
-  const [customValue, setCustomValue] = React.useState("");
+  const [inputValue, setInputValue] = React.useState(value || "");
+  const [showDropdown, setShowDropdown] = React.useState(false);
 
-  // Check if current value exists in options
+  // Update input when value changes from outside
   React.useEffect(() => {
-    if (value) {
-      const existsInOptions = options.some(option => option.value === value);
-      if (!existsInOptions) {
-        setIsCustomMode(true);
-        setCustomValue(value);
-      } else {
-        setIsCustomMode(false);
-        setCustomValue("");
-      }
-    }
-  }, [value, options]);
+    setInputValue(value || "");
+  }, [value]);
 
-  const handleSelectChange = (selectedValue: string) => {
-    if (selectedValue === "__create_new__") {
-      setIsCustomMode(true);
-      setCustomValue("");
-    } else {
-      setIsCustomMode(false);
-      onValueChange(selectedValue);
-    }
+  // Filter options based on input
+  const filteredOptions = options.filter(option =>
+    option.label.toLowerCase().includes(inputValue.toLowerCase())
+  );
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    onValueChange(newValue);
+    setShowDropdown(true);
   };
 
-  const handleCustomSubmit = async () => {
-    const trimmedValue = customValue.trim();
-    if (trimmedValue) {
-      if (onCreate) {
-        try {
-          await onCreate(trimmedValue);
-        } catch (error) {
-          console.error("Failed to create new option:", error);
-          // Still set the value even if backend call fails
-        }
-      }
-      onValueChange(trimmedValue);
-    }
+  const handleOptionSelect = (selectedValue: string) => {
+    setInputValue(selectedValue);
+    onValueChange(selectedValue);
+    setShowDropdown(false);
   };
 
-  const handleCustomKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleCustomSubmit();
-    } else if (e.key === 'Escape') {
-      setIsCustomMode(false);
-      setCustomValue("");
-    }
+  const handleInputFocus = () => {
+    setShowDropdown(true);
   };
 
-  if (isCustomMode) {
-    return (
-      <div className="flex gap-2">
-        <Input
-          value={customValue}
-          onChange={(e) => setCustomValue(e.target.value)}
-          onKeyDown={handleCustomKeyPress}
-          placeholder="Type new room type..."
-          disabled={disabled}
-          className={className}
-          autoFocus
-        />
-        <Button
-          type="button"
-          size="sm"
-          onClick={handleCustomSubmit}
-          disabled={disabled || !customValue.trim()}
-        >
-          Add
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setIsCustomMode(false);
-            setCustomValue("");
-          }}
-          disabled={disabled}
-        >
-          Cancel
-        </Button>
-      </div>
-    );
-  }
+  const handleInputBlur = () => {
+    // Delay hiding dropdown to allow option clicks
+    setTimeout(() => setShowDropdown(false), 150);
+  };
 
   return (
-    <Select
-      value={value}
-      onValueChange={handleSelectChange}
-      disabled={disabled}
-      name={name}
-    >
-      <SelectTrigger className={className}>
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-        <SelectItem value="__create_new__">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Plus className="h-4 w-4" />
-            Create new room type...
-          </div>
-        </SelectItem>
-      </SelectContent>
-    </Select>
+    <div className="relative">
+      <Input
+        value={inputValue}
+        onChange={handleInputChange}
+        onFocus={handleInputFocus}
+        onBlur={handleInputBlur}
+        placeholder={placeholder}
+        disabled={disabled}
+        className={className}
+        name={name}
+      />
+      
+      {showDropdown && filteredOptions.length > 0 && (
+        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-60 overflow-auto">
+          {filteredOptions.map((option) => (
+            <div
+              key={option.value}
+              className="px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+              onMouseDown={(e) => {
+                e.preventDefault(); // Prevent input blur
+                handleOptionSelect(option.value);
+              }}
+            >
+              {option.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

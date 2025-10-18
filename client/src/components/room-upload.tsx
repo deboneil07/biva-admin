@@ -38,7 +38,15 @@ const FOLDER_MAP = {
     "/events": "event",
 } as const;
 
-export function RoomUpload({ prop }: { prop: keyof typeof PROPS }) {
+export function RoomUpload({ 
+    prop, 
+    existingRoomTypes = [],
+    onUploadSuccess
+}: { 
+    prop: keyof typeof PROPS;
+    existingRoomTypes?: string[];
+    onUploadSuccess?: () => void;
+}) {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [open, setOpen] = useState(false);
@@ -50,8 +58,11 @@ export function RoomUpload({ prop }: { prop: keyof typeof PROPS }) {
     const fields = PROPS[prop];
     const folder = FOLDER_MAP[location.pathname as keyof typeof FOLDER_MAP];
     
-    // Empty options initially - room types will come from hotel-rooms page data
-    const roomTypeOptions: ComboboxOption[] = [];
+    // Convert existing room types to combobox options
+    const roomTypeOptions: ComboboxOption[] = existingRoomTypes.map(type => ({
+        value: type,
+        label: type,
+    }));
 
     // Debug file selection
     const handleFileSelect = (file: File | null) => {
@@ -194,32 +205,49 @@ export function RoomUpload({ prop }: { prop: keyof typeof PROPS }) {
                     folder,
                 );
                 console.log("📍 Current location:", location.pathname);
-                toast.success("Media uploaded successfully!");
+                toast.success("Room uploaded successfully!");
 
-                // Invalidate and refetch media queries - try multiple approaches
-                // 1. Specific folder invalidation
-                await queryClient.invalidateQueries({
-                    queryKey: ["media", folder],
-                });
-                console.log(
-                    "🔄 Specific query invalidation triggered for key:",
-                    ["media", folder],
-                );
+                // Comprehensive query invalidation strategy
+                try {
+                    // Small delay to ensure backend processing is complete
+                    await new Promise(resolve => setTimeout(resolve, 100));
 
-                // 2. Broad media invalidation as fallback
-                await queryClient.invalidateQueries({ queryKey: ["media"] });
-                console.log(
-                    "🔄 Broad query invalidation triggered for all media queries",
-                );
+                    // 1. Invalidate specific hotel-rooms queries
+                    await queryClient.invalidateQueries({
+                        queryKey: ["media", "hotel-rooms"],
+                    });
+                    console.log("🔄 Hotel-rooms specific invalidation completed");
 
-                // 3. Force refetch for current queries
-                await queryClient.refetchQueries({
-                    queryKey: ["media", folder],
-                });
-                console.log("🔄 Force refetch triggered for key:", [
-                    "media",
-                    folder,
-                ]);
+                    // 2. Invalidate current folder queries  
+                    await queryClient.invalidateQueries({
+                        queryKey: ["media", folder],
+                    });
+                    console.log("🔄 Folder specific invalidation completed:", folder);
+
+                    // 3. Invalidate all media queries as fallback
+                    await queryClient.invalidateQueries({ 
+                        queryKey: ["media"],
+                        exact: false 
+                    });
+                    console.log("🔄 Broad media invalidation completed");
+
+                    // 4. Force refetch the current page data
+                    await queryClient.refetchQueries({
+                        queryKey: ["media", "hotel-rooms"],
+                        type: "active"
+                    });
+                    console.log("🔄 Force refetch completed");
+
+                    // 5. Call optional success callback
+                    if (onUploadSuccess) {
+                        onUploadSuccess();
+                        console.log("🔄 Upload success callback executed");
+                    }
+
+                } catch (invalidationError) {
+                    console.error("❌ Query invalidation error:", invalidationError);
+                    // Don't fail the upload process if invalidation fails
+                }
 
                 // Reset form and close dialog
                 setSelectedFile(null);
@@ -231,7 +259,7 @@ export function RoomUpload({ prop }: { prop: keyof typeof PROPS }) {
                     formRef.current.reset();
                 }
 
-                console.log("🎉 Upload process completed successfully");
+                console.log("🎉 Room upload process completed successfully");
             }
         } catch (error: any) {
             console.error("Upload error:", error);
@@ -266,7 +294,7 @@ export function RoomUpload({ prop }: { prop: keyof typeof PROPS }) {
                             options={roomTypeOptions}
                             value={roomType}
                             onValueChange={setRoomType}
-                            placeholder="Type to create room type..."
+                            placeholder="Type or select room type..."
                             disabled={uploading}
                             name={`value-${index}`}
                         />
