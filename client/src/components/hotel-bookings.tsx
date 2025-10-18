@@ -69,7 +69,7 @@ export type TableDataType = {
   total_people: number;
   total_rooms: number;
   paid: boolean;
-  totalAmount: number;
+  total_amount: number;
   createdAt: string;
 }
 
@@ -84,7 +84,7 @@ export const schema = z.object({
   total_people: z.number(),
   total_rooms: z.number(),
   paid: z.boolean(),
-  totalAmount: z.number(),
+  total_amount: z.number(),
   createdAt: z.string(),
 });
 
@@ -156,7 +156,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     header: "Amount",
     cell: ({ row }) => (
       <div className="text-sm font-medium">
-        ₹{row.original.totalAmount.toLocaleString()}
+        ₹{row.original.total_amount.toLocaleString()}
       </div>
     ),
   },
@@ -404,7 +404,7 @@ function TableCellViewer({
             </div>
             <div className="flex flex-col gap-3">
               <Label htmlFor="amount">Total Amount</Label>
-              <Input id="amount" defaultValue={`₹${item.totalAmount.toLocaleString()}`} disabled className="bg-muted" />
+              <Input id="amount" defaultValue={`₹${item.total_amount.toLocaleString()}`} disabled className="bg-muted" />
             </div>
             <div className="flex flex-col gap-3">
               <Label htmlFor="paid">Payment Status</Label>
@@ -443,7 +443,7 @@ export const sampleHotelBookings: TableDataType[] = [
     total_people: 4,
     total_rooms: 2,
     paid: true,
-    totalAmount: 8500,
+    total_amount: 8500,
     createdAt: "2024-10-12T14:30:00Z"
   },
   {
@@ -457,7 +457,7 @@ export const sampleHotelBookings: TableDataType[] = [
     total_people: 2,
     total_rooms: 1,
     paid: false,
-    totalAmount: 3200,
+    total_amount: 3200,
     createdAt: "2024-10-13T09:15:00Z"
   }
 ];

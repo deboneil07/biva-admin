@@ -21,6 +21,7 @@ import FoodCourtMediaPage from "./pages/food-court-media";
 import BakeryMediaPage from "./pages/bakery-media";
 import HotelRoomsPage from "./pages/hotel-rooms";
 import EventsPage from "./pages/events";
+import GalleryPage from "./pages/gallery-page";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,7 +51,7 @@ function App() {
             <Route path="/hotel/media" element={<HotelMediaPage />} />
             <Route path="/foodcourt/media" element={<FoodCourtMediaPage />} />
             <Route path="/bakery/media" element={<BakeryMediaPage />} />
-            <Route path="/gallery" element={<Gallery prop="gallery" />} />
+            <Route path="/gallery" element={<GalleryPage />} />
             <Route path="/hotel/rooms" element={<HotelRoomsPage />}/>
             <Route path="/events" element={<EventsPage />}/> 
           </Route>

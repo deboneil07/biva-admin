@@ -11,7 +11,7 @@ export default function HotelBookingsPage() {
 
   const bookings = useMemo(() => {
     console.log("Memoizing users data:", data?.data);
-    return data?.data?.users ?? [];
+    return data?.data ?? [];
   }, [data]);
 
   console.log("Team render - isFetching:", isFetching, "users length:", bookings.length, "error:", error);

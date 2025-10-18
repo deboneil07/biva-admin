@@ -1,18 +1,21 @@
 import type { PROPS } from "@/data/image-props";
 import GalleryHeader from "./gallery-header";
 import ImageCard from "./gallery-image-card";
-import { useLocation } from "react-router-dom";
-import { useMediaData, getItemsForProp } from "@/hooks/useMediaData";
 import { Spinner } from "./ui/spinner";
 
-export default function Gallery({prop} : {prop: keyof typeof PROPS}) {
-  const location = useLocation();
-  const { data, isLoading, error } = useMediaData(location.pathname);
-  console.log(data)
-  
-  // Get the actual items for this specific prop
-  const items = getItemsForProp(data, prop);
-  // console.log(items);
+export default function Gallery({
+  prop, 
+  isLoading, 
+  error, 
+  data
+}: {
+  prop: keyof typeof PROPS;
+  isLoading: boolean;
+  error: Error | null;
+  data: any;
+}) {
+  // Simple data handling - expect processed data from parent
+  const items = Array.isArray(data) ? data : [];
 
   if (isLoading) {
     return (

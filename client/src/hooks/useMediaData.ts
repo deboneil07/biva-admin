@@ -83,8 +83,15 @@ export function getItemsForProp(
 ): ImageItem[] {
   if (!data) return [];
   
-  // Try exact prop match first
-  const items = data[prop] || data[`${prop}s`]; // handle plural forms
+  let items;
+  
+  // Special handling for 'items' prop - flatten groupedItems
+  if (prop === 'items' && data.groupedItems) {
+    items = Object.values(data.groupedItems).flat();
+  } else {
+    // Try exact prop match first
+    items = data[prop] || data[`${prop}s`]; // handle plural forms
+  }
   
   if (!Array.isArray(items)) return [];
   
