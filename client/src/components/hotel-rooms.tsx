@@ -66,8 +66,8 @@ export type TableDataType = {
   desc: string;
   price: string;
   room_type: string;
-  room_id?: string;
-  room_number?: string;
+  room_id: string;
+  room_number: string;
 }
 
 export const schema = z.object({
@@ -182,6 +182,18 @@ const createColumns = (allRoomData: any[]): ColumnDef<z.infer<typeof schema>>[] 
       </div>
     ),
   },
+    {
+    accessorKey: "room_number",
+    header: "Room Number",
+    cell: ({ row }) => (
+      <div className="text-sm font-medium">
+        {row.original.price === "no price available" ? 
+          <span className="text-gray-500">No price</span> : 
+          `${row.original.room_number}`
+        }
+      </div>
+    ),
+  },
   {
     accessorKey: "url",
     header: "Image",
@@ -276,7 +288,7 @@ export function HotelRooms({
       
       // Call delete API
       const response = await instance.delete("/room/delete", {
-        data: { ids: selectedIds }
+        data: { room_numbers: selectedIds }
       });
       
       // Dismiss loading toast
@@ -557,37 +569,3 @@ function TableCellViewer({
   );
 }
 
-// Sample fake data for testing
-export const sampleHotelRooms: TableDataType[] = [
-  {
-    public_id: "hotel_room_deluxe_001",
-    url: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop",
-    desc: "Deluxe room with city view and modern amenities",
-    price: "5000",
-    room_type: "deluxe",
-    room_id: "R001"
-  },
-  {
-    public_id: "hotel_room_suite_002", 
-    url: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
-    desc: "Luxury suite with panoramic view",
-    price: "8500",
-    room_type: "suite",
-    room_id: "R002"
-  },
-  {
-    public_id: "hotel_room_standard_003",
-    url: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop",
-    desc: "Standard room with essential amenities",
-    price: "3000",
-    room_type: "standard",
-    room_id: "R003"
-  },
-  {
-    public_id: "hotel_room_premium_004",
-    url: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop",
-    desc: "Premium room with balcony access",
-    price: "no price available",
-    room_type: "premium"
-  }
-];
