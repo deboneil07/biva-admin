@@ -169,11 +169,22 @@ export const getImage = async (c: Context) => {
         "hero",
         param,
       );
+      const bakeryCategory = await cloudService.listByMetadata(
+        "position",
+        "category",
+        param,
+      );
 
       const hero: HotelHero[] = bakeryHero.map((itm) => ({
         public_id: itm.public_id,
-        url: itm.secure_url,
+        url: itm.optimized_url,
         position: itm.context.position,
+      }));
+
+      const category = bakeryCategory.map((cat) => ({
+        public_id: cat.public_id,
+        url: cat.optimized_url,
+        position: cat.context?.position,
       }));
 
       const groupedItems: GroupedBakeryItems = {
@@ -194,12 +205,12 @@ export const getImage = async (c: Context) => {
           title: img.context?.caption ?? "",
           public_id: img.public_id,
           desc,
-          url: img.secure_url,
+          url: img.optimized_url,
         });
       });
 
       return c.json({
-        data: { hero: hero, groupedItems },
+        data: { hero: hero, groupedItems, category },
       });
     } else {
       const images = await cloudService.listImages(param);
