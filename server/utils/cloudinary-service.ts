@@ -141,20 +141,34 @@ export class CloudinaryService {
       maxSizeBytes,
     } = options;
 
+    const isVideoMime = (mime: string | null | undefined): boolean =>
+      !!mime && mime.startsWith("video/");
+
     const toBuffer = async (
       src: typeof source,
     ): Promise<{
       buffer?: Buffer;
       detectedMime?: string | null;
       originalName?: string | null;
+      isString?: boolean;
     }> => {
       if (typeof src === "string") {
-        return { buffer: undefined };
+        // remote URL — no buffer
+        return {
+          buffer: undefined,
+          detectedMime: null,
+          originalName: null,
+          isString: true,
+        };
       }
 
       if (Buffer.isBuffer(src)) {
         const detected = await fileTypeFromBuffer(src);
-        return { buffer: src, detectedMime: detected?.mime ?? null };
+        return {
+          buffer: src,
+          detectedMime: detected?.mime ?? null,
+          originalName: null,
+        };
       }
 
       if (typeof (src as any)?.arrayBuffer === "function") {
@@ -172,19 +186,48 @@ export class CloudinaryService {
       if (src instanceof ArrayBuffer) {
         const buf = Buffer.from(new Uint8Array(src));
         const detected = await fileTypeFromBuffer(buf);
-        return { buffer: buf, detectedMime: detected?.mime ?? null };
+        return {
+          buffer: buf,
+          detectedMime: detected?.mime ?? null,
+          originalName: null,
+        };
       }
 
       if (src instanceof Uint8Array) {
         const buf = Buffer.from(src);
         const detected = await fileTypeFromBuffer(buf);
-        return { buffer: buf, detectedMime: detected?.mime ?? null };
+        return {
+          buffer: buf,
+          detectedMime: detected?.mime ?? null,
+          originalName: null,
+        };
       }
 
-      return { buffer: undefined };
+      return { buffer: undefined, detectedMime: null, originalName: null };
     };
 
-    const resource_type = forceResourceType ?? "auto";
+    const { buffer, detectedMime, originalName, isString } =
+      await toBuffer(source);
+
+    // If user forced a resource type, use it. Otherwise infer:
+    let resource_type: "auto" | "image" | "video" | "raw" =
+      (forceResourceType as any) ?? "auto";
+
+    if (!forceResourceType) {
+      if (buffer && detectedMime) {
+        resource_type = isVideoMime(detectedMime) ? "video" : "auto";
+      } else if (isString && typeof source === "string") {
+        // Use file extension heuristic for URLs e.g. .mp4, .mov, .webm
+        const lower = source.toLowerCase();
+        if (/\.(mp4|mov|m4v|webm|mkv|avi|flv)(\?|$)/.test(lower)) {
+          resource_type = "video";
+        } else if (/\.(jpe?g|png|gif|webp|avif)(\?|$)/.test(lower)) {
+          resource_type = "image";
+        } else {
+          resource_type = "auto";
+        }
+      }
+    }
 
     const uploadOpts: Record<string, any> = {
       resource_type,
@@ -195,8 +238,12 @@ export class CloudinaryService {
     if (tags) uploadOpts.tags = tags;
     if (context) uploadOpts.context = context;
 
-    const { buffer, detectedMime, originalName } = await toBuffer(source);
+    // For videos, add chunking to help larger uploads
+    if (resource_type === "video") {
+      uploadOpts.chunk_size = 6 * 1024 * 1024; // 6MB
+    }
 
+    // Size validation (only when we actually have a buffer or File)
     if (
       typeof maxSizeBytes === "number" &&
       buffer &&
@@ -207,6 +254,7 @@ export class CloudinaryService {
       );
     }
 
+    // MIME whitelist check (only if detectedMime exists)
     if (
       allowedMimeTypes &&
       detectedMime &&
@@ -218,8 +266,33 @@ export class CloudinaryService {
     let result: UploadApiResponse;
 
     try {
-      if (buffer) {
-        result = await new Promise((resolve, reject) => {
+      if (!buffer) {
+        throw new Error(
+          "Unsupported source type: cannot convert to buffer or upload a string URL",
+        );
+      }
+
+      console.log("🔍 Detected mime:", detectedMime);
+      console.log(
+        "🔍 Final upload options about to be sent to Cloudinary:",
+        uploadOpts,
+      );
+
+      // --- If video: use uploader.upload with data URI (reliable for server-side signed uploads)
+      if (uploadOpts.resource_type === "video") {
+        // Convert buffer to data URI and upload via uploader.upload()
+        const dataUri = `data:${detectedMime ?? "video/mp4"};base64,${buffer.toString(
+          "base64",
+        )}`;
+
+        // Use uploader.upload - it worked in your test-upload-file.js and is more reliable than stream in this environment
+        result = (await Cloudinary.uploader.upload_large(
+          dataUri,
+          uploadOpts,
+        )) as UploadApiResponse;
+      } else {
+        // Non-video: continue using upload_stream but write buffer directly
+        result = await new Promise<UploadApiResponse>((resolve, reject) => {
           const uploader = Cloudinary.uploader.upload_stream(
             uploadOpts,
             (err, res) => {
@@ -227,14 +300,16 @@ export class CloudinaryService {
               resolve(res as UploadApiResponse);
             },
           );
-          streamifier.createReadStream(buffer).pipe(uploader);
+          uploader.end(buffer);
         });
-      } else {
-        throw new Error(
-          "Unsupported source type: cannot convert to buffer or upload a string URL",
-        );
       }
     } catch (err: any) {
+      console.error("❌ Cloudinary upload error details:", {
+        message: err?.message ?? String(err),
+        name: err?.name,
+        http_code: err?.http_code ?? null,
+        raw: err?.error ?? err,
+      });
       const message = err?.message ?? String(err);
       throw new Error(`Cloudinary upload failed: ${message}`);
     }
