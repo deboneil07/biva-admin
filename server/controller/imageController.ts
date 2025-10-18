@@ -156,6 +156,7 @@ export const getImage = async (c: Context) => {
         desc: itm.context?.description ?? "description not available",
         price: itm.context?.price ?? "no price available",
         room_id: itm.context?.id,
+        room_type: itm.context?.room_type,
       }));
 
       return c.json({ rooms });

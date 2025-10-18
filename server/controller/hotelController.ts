@@ -17,8 +17,8 @@ hotelRouter.post("/create", async (c: Context) => {
 
     const room_number =
       typeof body["room_number"] === "string" ? body["room_number"] : null;
-    const type_of_room =
-      typeof body["type_of_room"] === "string" ? body["type_of_room"] : null;
+    const room_type =
+      typeof body["room_type"] === "string" ? body["room_type"] : null;
     const floor =
       typeof body["floor"] === "string" ? parseInt(body["floor"]) : null;
     const occupancy =
@@ -35,7 +35,7 @@ hotelRouter.post("/create", async (c: Context) => {
       body["file"] instanceof File ? (body["file"] as File) : null;
     if (
       room_number === null ||
-      type_of_room === null ||
+      room_type === null ||
       floor === null ||
       occupancy === null ||
       price === null ||
@@ -49,6 +49,8 @@ hotelRouter.post("/create", async (c: Context) => {
       await uploadMediaMethod(hotel_image, "hotel-rooms", {
         Price: price.toString(),
         Description: description || "",
+        RoomType: room_type! || "",
+        RoomNumber: room_number! || "",
       });
 
     if (!uploadHotelImage?.secure_url || !uploadHotelImage?.optimized_url) {
@@ -59,7 +61,7 @@ hotelRouter.post("/create", async (c: Context) => {
       .insert(adminHotelRoomReservation)
       .values({
         roomNumber: room_number,
-        typeOfRoom: type_of_room,
+        typeOfRoom: room_type!,
         floor: floor,
         occupancy: occupancy,
         price: price,
