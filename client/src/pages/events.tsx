@@ -1,5 +1,5 @@
 import { Events, sampleEvents } from "@/components/events";
-import { EventOrRoomUpload } from "@/components/event-or-room-uplaod";
+import { EventOrRoomUpload } from "@/components/event-uplaod";
 import { useMediaData } from "@/hooks/useMediaData";
 import { useMemo } from "react";
 

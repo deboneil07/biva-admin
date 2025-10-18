@@ -83,7 +83,11 @@ export const PROPS = {
             value: "rooms",
         },
         {
-            key: "type",
+            key: "room_number",
+            value: null,
+        },  
+        {
+            key: "room_type",
             value: []
         },
         {
@@ -94,5 +98,17 @@ export const PROPS = {
             key: "price",
             value: null
         },
+        {
+            key: "floor",
+            value: null
+        },
+        {
+            key: "occupancy",
+            value: null
+        },
+        {
+            key: "occupied",
+            value: ["true", "false"]
+        }
     ]
 }

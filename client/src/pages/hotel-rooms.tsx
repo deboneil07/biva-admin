@@ -1,5 +1,6 @@
 import { HotelRooms, sampleHotelRooms } from "@/components/hotel-rooms";
 import { MediaUploadDialog } from "@/components/media-upload-dialog";
+import { RoomUpload } from "@/components/room-upload";
 import { useMediaData } from "@/hooks/useMediaData";
 import { useMemo } from "react";
 
@@ -14,7 +15,7 @@ export default function HotelRoomsPage() {
     return (
         <div className="flex flex-1 flex-col">
             <div className="@container/main flex flex-1 flex-col gap-2">
-            <MediaUploadDialog prop="rooms"/>
+            <RoomUpload prop="rooms"/>
                 <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
                     <HotelRooms
                         data={rooms || sampleHotelRooms}
