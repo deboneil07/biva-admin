@@ -28,7 +28,6 @@ import { instance } from "@/utils/axios";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRoomTypes, useCreateRoomType } from "@/hooks/useRoomTypes";
 
 const FOLDER_MAP = {
     "/hotel/media": "hotel",
@@ -48,18 +47,11 @@ export function RoomUpload({ prop }: { prop: keyof typeof PROPS }) {
     const location = useLocation();
     const queryClient = useQueryClient();
     
-    // Fetch existing room types
-    const { data: roomTypesData, isLoading: isLoadingRoomTypes } = useRoomTypes();
-    const createRoomTypeMutation = useCreateRoomType();
-
     const fields = PROPS[prop];
     const folder = FOLDER_MAP[location.pathname as keyof typeof FOLDER_MAP];
     
-    // Convert room types data to combobox options
-    const roomTypeOptions: ComboboxOption[] = (roomTypesData || []).map(roomType => ({
-        value: roomType.name,
-        label: roomType.name,
-    }));
+    // Empty options initially - room types will come from hotel-rooms page data
+    const roomTypeOptions: ComboboxOption[] = [];
 
     // Debug file selection
     const handleFileSelect = (file: File | null) => {
@@ -86,6 +78,12 @@ export function RoomUpload({ prop }: { prop: keyof typeof PROPS }) {
 
         if (!folder) {
             toast.error("Invalid upload location");
+            return;
+        }
+
+        // Validate room type is provided
+        if (!roomType || !roomType.trim()) {
+            toast.error("Please specify a room type");
             return;
         }
 
@@ -170,7 +168,8 @@ export function RoomUpload({ prop }: { prop: keyof typeof PROPS }) {
             });
 
             // Debug: Log FormData contents
-            console.log("📤 Uploading media with data:");
+            console.log("📤 Uploading room data to /room/create:");
+            console.log("Room Type:", roomType);
             for (const [key, value] of formData.entries()) {
                 if (value instanceof File) {
                     console.log(
@@ -180,9 +179,10 @@ export function RoomUpload({ prop }: { prop: keyof typeof PROPS }) {
                     console.log(`${key}: ${value}`);
                 }
             }
-            console.log(formData);
+            console.log("FormData contents:", formData);
+            
             // Upload to server
-            const response = await instance.post("/event/create", formData, {
+            const response = await instance.post("/room/create", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },
@@ -262,22 +262,14 @@ export function RoomUpload({ prop }: { prop: keyof typeof PROPS }) {
                         placeholder="Key"
                     />
                     <div className="flex-1">
-                        {isLoadingRoomTypes ? (
-                            <Select disabled>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Loading room types..." />
-                                </SelectTrigger>
-                            </Select>
-                        ) : (
-                            <CreatableSelect
-                                options={roomTypeOptions}
-                                value={roomType}
-                                onValueChange={setRoomType}
-                                placeholder="Select or create room type..."
-                                disabled={uploading}
-                                name={`value-${index}`}
-                            />
-                        )}
+                        <CreatableSelect
+                            options={roomTypeOptions}
+                            value={roomType}
+                            onValueChange={setRoomType}
+                            placeholder="Type to create room type..."
+                            disabled={uploading}
+                            name={`value-${index}`}
+                        />
                     </div>
                 </div>
             );

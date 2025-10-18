@@ -56,7 +56,7 @@ export const getImage = async (c: Context) => {
         param,
       );
       // const heroItems = filterByPosition(itemsWithPosition, "hero");
-      console.log("hero items", HotelHeroItems);
+      // console.log("hero itemns", HotelHeroItems);
       // const banquetItems = filterByPosition(itemsWithPosition, "banquet");
       const HotelBanquetItems = await cloudService.listByMetadata(
         "position",
@@ -83,7 +83,7 @@ export const getImage = async (c: Context) => {
       });
     } else if (param.includes("events")) {
       const events = await cloudService.listImages("events", true);
-      console.log(events[0]);
+      // console.log(events[0]);
       return c.json({
         events: events.map((img) => ({
           // event_name: img.context?.custom?.id,
