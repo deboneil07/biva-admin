@@ -126,11 +126,11 @@ export const getImage = async (c: Context) => {
         position: itm.context.position,
       }));
 
-      const preferences: { public_id: string; url: string; name: string }[] =
+      const preference: { public_id: string; url: string; name: string }[] =
         [];
 
       FoodCourtPreference.forEach((itm) => {
-        preferences.push({
+        preference.push({
           public_id: itm.public_id,
           url: itm.secure_url,
           name: itm?.context.name,
@@ -140,7 +140,7 @@ export const getImage = async (c: Context) => {
       return c.json({
         data: {
           hero,
-          preferences,
+          preference,
         },
       });
     } else if (param === "hotel-rooms") {
