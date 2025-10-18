@@ -116,7 +116,7 @@ export const getImage = async (c: Context) => {
       );
       const FoodCourtPreference = await cloudService.listByMetadata(
         "position",
-        "name",
+        "preference",
         param,
       );
 
