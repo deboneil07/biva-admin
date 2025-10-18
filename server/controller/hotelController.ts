@@ -33,6 +33,8 @@ hotelRouter.post("/create", async (c: Context) => {
       typeof body["occupied"] === "string" ? body["occupied"] === "true" : null;
     const hotel_image =
       body["file"] instanceof File ? (body["file"] as File) : null;
+    const position =
+      typeof body["position"] === "string" ? body["position"] : null;
     if (
       room_number === null ||
       room_type === null ||
@@ -47,10 +49,11 @@ hotelRouter.post("/create", async (c: Context) => {
 
     const uploadHotelImage: UploadFileResult | undefined =
       await uploadMediaMethod(hotel_image, "hotel-rooms", {
-        Price: price.toString(),
-        Description: description || "",
-        RoomType: room_type! || "",
-        RoomNumber: room_number! || "",
+        price: price.toString(),
+        description: description || "",
+        room_type: room_type! || "",
+        room_number: room_number! || "",
+        position: position || "",
       });
 
     if (!uploadHotelImage?.secure_url || !uploadHotelImage?.optimized_url) {
