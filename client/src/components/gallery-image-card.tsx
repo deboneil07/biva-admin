@@ -12,15 +12,15 @@ type ImageCardProps = {
   name: string;
   src: string;
   prop: keyof typeof PROPS;
-  [key: string]: any; // Accept additional metadata
+  type?: "image" | "video"; // 👈 optional explicit type
+  [key: string]: any; // extra metadata
 };
 
-export default function ImageCard({ id, name, src, prop, ...rest }: ImageCardProps) {
+export default function ImageCard({ id, name, src, prop, type, ...rest }: ImageCardProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const { updateStore, getSelection } = useMediaStore();
   const { id: selectedIds } = getSelection(prop);
-
   const isSelected = selectedIds.includes(id);
 
   const handleCardClick = () => {
@@ -29,6 +29,11 @@ export default function ImageCard({ id, name, src, prop, ...rest }: ImageCardPro
       : [...selectedIds, id];
     updateStore(prop, { id: newIds, count: newIds.length });
   };
+
+  // 👇 Detect media type automatically if not explicitly given
+  const isVideo = type
+    ? type === "video"
+    : /\.(mp4|webm|ogg)$/i.test(src);
 
   return (
     <div className="flex justify-center items-center mt-10">
@@ -40,9 +45,21 @@ export default function ImageCard({ id, name, src, prop, ...rest }: ImageCardPro
         }`}
         onClick={handleCardClick}
       >
-        {/* IMAGE */}
+        {/* MEDIA PREVIEW */}
         <div className="relative w-full h-40 -m-px rounded-t-xl overflow-hidden">
-          <img src={src} alt={name} className="w-full h-full object-cover" />
+          {isVideo ? (
+            <video
+              src={src}
+              className="w-full h-full object-cover"
+              muted
+              loop
+              playsInline
+              onMouseOver={(e) => e.currentTarget.play()}
+              onMouseOut={(e) => e.currentTarget.pause()}
+            />
+          ) : (
+            <img src={src} alt={name} className="w-full h-full object-cover" />
+          )}
 
           {/* SELECTION CHECK */}
           {isSelected && (
@@ -72,7 +89,6 @@ export default function ImageCard({ id, name, src, prop, ...rest }: ImageCardPro
                 </Button>
               </SheetTrigger>
 
-              {/* SHEET CONTENT */}
               <SheetContent
                 side="right"
                 className="w-full sm:max-w-sm md:max-w-md overflow-y-auto p-5"
@@ -81,29 +97,18 @@ export default function ImageCard({ id, name, src, prop, ...rest }: ImageCardPro
                   <SheetTitle>{name} — Properties</SheetTitle>
                 </SheetHeader>
 
-                {/* IMAGE PREVIEW */}
-                {/* <div className="mt-4 mb-6">
-                  <img
-                    src={src}
-                    alt={name}
-                    className="w-full h-40 object-cover rounded-lg border"
-                  />
-                </div> */}
-
                 {/* PROPERTY GRID */}
-                <div className="flex flex-col gap-3 pb-6">
+                <div className="flex flex-col gap-3 pb-6 mt-4">
                   {Object.entries(rest).map(([key, value]) => (
                     <div
                       key={key}
                       className="grid grid-cols-2 gap-2 items-center"
                     >
-                      {/* Key */}
                       <Input
                         disabled
                         value={key}
                         className="bg-muted cursor-not-allowed flex-1"
                       />
-                      {/* Value */}
                       <Input
                         disabled
                         value={

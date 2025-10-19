@@ -47,8 +47,12 @@ export class CloudinaryService {
 
   async deleteImageVideo(public_id: string[]) {
     try {
-      const res = await Cloudinary.api.delete_resources(public_id);
-      return res;
+      const [imgRes, vidRes] = await Promise.all([
+        Cloudinary.api.delete_resources(public_id, { resource_type: "image" }),
+        Cloudinary.api.delete_resources(public_id, { resource_type: "video" }),
+      ]);
+      console.log("del", imgRes, vidRes);
+      return [imgRes, vidRes];
     } catch (err) {
       console.error("deleteImageVideoService error:", err);
       throw err;
