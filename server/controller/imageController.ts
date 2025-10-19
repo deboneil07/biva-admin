@@ -126,8 +126,7 @@ export const getImage = async (c: Context) => {
         position: itm.context.position,
       }));
 
-      const preference: { public_id: string; url: string; name: string }[] =
-        [];
+      const preference: { public_id: string; url: string; name: string }[] = [];
 
       FoodCourtPreference.forEach((itm) => {
         preference.push({
