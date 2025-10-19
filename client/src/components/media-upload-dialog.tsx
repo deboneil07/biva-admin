@@ -307,7 +307,7 @@ export function MediaUploadDialog({prop}: {prop: keyof typeof PROPS}) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          <Upload className="w-4 h-4 mr-2" /> Upload
+          <Upload className="w-4 h-4 mr-2" size={}/> Upload
         </Button>
       </DialogTrigger>
 
