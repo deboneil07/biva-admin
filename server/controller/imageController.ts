@@ -83,7 +83,7 @@ export const getImage = async (c: Context) => {
       });
     } else if (param.includes("events")) {
       const events = await cloudService.listImages("events", true);
-      // console.log(events[0]);
+      // console.log("THIS IS EVENTS", events[0].context);
       return c.json({
         events: events.map((img) => ({
           // event_name: img.context?.custom?.id,
@@ -96,7 +96,7 @@ export const getImage = async (c: Context) => {
           public_id: img.public_id,
           position: img.context?.custom?.position,
           url: img.secure_url,
-          venue_img_url: img.context?.custom?.venue_img_url,
+          venue_img_url: img.context?.custom?.venue_image,
         })),
       });
     } else if (param.includes("gallery")) {
@@ -127,8 +127,7 @@ export const getImage = async (c: Context) => {
         position: itm.context.position,
       }));
 
-      const preference: { public_id: string; url: string; name: string }[] =
-        [];
+      const preference: { public_id: string; url: string; name: string }[] = [];
 
       FoodCourtPreference.forEach((itm) => {
         preference.push({

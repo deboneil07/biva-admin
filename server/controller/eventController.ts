@@ -42,7 +42,7 @@ eventRouter.post("/create", async (c: Context) => {
     const uuid = generate_uuid();
 
     const venue_image_upload: UploadFileResult | undefined =
-      await uploadMediaMethod(venue_image, "events");
+      await uploadMediaMethod(venue_image, "event_venue");
 
     const uploadBanner: UploadFileResult | undefined = await uploadMediaMethod(
       image,
@@ -76,7 +76,7 @@ eventRouter.post("/create", async (c: Context) => {
         date: date,
         time: time,
         banner: banner,
-        venueImageUrl: venue_image_upload.secure_url!,
+        venueImageUrl: venue_image_upload.secure_url! || "cannot upload image",
       })
       .returning();
 
