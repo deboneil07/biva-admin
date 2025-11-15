@@ -39,7 +39,6 @@ const FOLDER_MAP = {
 
 export function EventOrRoomUpload({ prop }: { prop: keyof typeof PROPS }) {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [venueImage, setVenueImage] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [open, setOpen] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
@@ -51,20 +50,21 @@ export function EventOrRoomUpload({ prop }: { prop: keyof typeof PROPS }) {
 
     // Debug file selection
     const handleFileSelect = (file: File | null) => {
+        console.log("📁 File selected:", {
+            file: file
+                ? {
+                      name: file.name,
+                      size: file.size,
+                      type: file.type,
+                      lastModified: file.lastModified,
+                  }
+                : null,
+        });
         setSelectedFile(file);
-    };
-
-    const handleVenueSelect = (file: File | null) => {
-        setVenueImage(file);
     };
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-
-        if (!venueImage) {
-            toast.error("Please select a file to upload");
-            return;
-        }
 
         if (!selectedFile) {
             toast.error("Please select a file to upload");
@@ -108,7 +108,6 @@ export function EventOrRoomUpload({ prop }: { prop: keyof typeof PROPS }) {
 
             // Add the file
             formData.append("file", selectedFile);
-            formData.append("venue_image", venueImage);
 
             // Add the folder
             formData.append("folder", folder);
@@ -360,20 +359,9 @@ export function EventOrRoomUpload({ prop }: { prop: keyof typeof PROPS }) {
                             <div className="grid gap-4">
                                 {/* Media Upload */}
                                 <div className="grid gap-3">
-                                    <Label>Event Image</Label>
+                                    <Label>Media File *</Label>
                                     <UploadFile
                                         onFileSelect={handleFileSelect}
-                                        disabled={uploading}
-                                        size="small"
-                                        accept="both"
-                                        label="Upload Image or Video"
-                                    />
-                                </div>
-
-                                <div className="grid gap-3">
-                                    <Label>Venue Image</Label>
-                                    <UploadFile
-                                        onFileSelect={handleVenueSelect}
                                         disabled={uploading}
                                         size="small"
                                         accept="both"
