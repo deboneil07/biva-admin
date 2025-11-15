@@ -22,6 +22,10 @@ eventRouter.post("/create", async (c: Context) => {
     const date = typeof body["date"] === "string" ? body["date"] : null;
     const time = typeof body["time"] === "string" ? body["time"] : null;
     const image = body["file"] instanceof File ? (body["file"] as File) : null;
+    const venue_image =
+      body["venue_image"] instanceof File
+        ? (body["venue_image"] as File)
+        : null;
 
     if (
       event_name === null ||
@@ -29,12 +33,16 @@ eventRouter.post("/create", async (c: Context) => {
       ticket_price_str === null ||
       date === null ||
       time === null ||
-      image === null
+      image === null ||
+      venue_image === null
     ) {
       return c.json({ error: "Missing required fields" }, 400);
     }
 
     const uuid = generate_uuid();
+
+    const venue_image_upload: UploadFileResult | undefined =
+      await uploadMediaMethod(venue_image, "events");
 
     const uploadBanner: UploadFileResult | undefined = await uploadMediaMethod(
       image,
@@ -47,6 +55,7 @@ eventRouter.post("/create", async (c: Context) => {
         date: date,
         time: time,
         group_name: group_name,
+        venue_image: venue_image_upload.secure_url!,
       },
     );
     if (!uploadBanner?.secure_url) {
@@ -67,6 +76,7 @@ eventRouter.post("/create", async (c: Context) => {
         date: date,
         time: time,
         banner: banner,
+        venueImageUrl: venue_image_upload.secure_url!,
       })
       .returning();
 
@@ -107,6 +117,7 @@ eventRouter.delete("/delete", async (c: Context) => {
         event_id: adminEventTable.eventId,
         event_name: adminEventTable.eventName,
         event_img: adminEventTable.banner,
+        event_venue_img: adminEventTable.venueImageUrl,
       });
 
     if (deletedEvents.length === 0) {
@@ -121,12 +132,12 @@ eventRouter.delete("/delete", async (c: Context) => {
     }
 
     const publicIdPromises = deletedEvents.map((eve) =>
-      convertUrlsToPublicId(eve.event_img),
+      convertUrlsToPublicId([eve.event_img, eve.event_venue_img]),
     );
     const resolvedPublicIds = await Promise.all(publicIdPromises);
-    const imagesToDelete: string[] = resolvedPublicIds.filter(
-      (id): id is string => id !== null && id !== undefined,
-    );
+    const imagesToDelete: string[] = resolvedPublicIds
+      .flat()
+      .filter((id): id is string => id !== null && id !== undefined);
 
     const deletedImages = await deleteMediaFunction(imagesToDelete);
 
@@ -143,5 +154,5 @@ eventRouter.delete("/delete", async (c: Context) => {
   } catch (err: any) {
     console.error("Error deleting events:", err);
     return c.json({ error: "Failed to delete events" }, 500);
-  }
+  }a
 });

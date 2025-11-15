@@ -131,10 +131,12 @@ export const getImage = async (c: Context) => {
       FoodCourtPreference.forEach((itm) => {
         preference.push({
           public_id: itm.public_id,
-          url: itm.secure_url,
+          url: itm.optimized_url,
           name: itm?.context.name,
         });
       });
+
+      console.log(preference);
 
       return c.json({
         data: {
@@ -252,7 +254,7 @@ export const uploadImageVideoController = async (
       }
     }
     const res = await cloudService.uploadMedia(file, {
-      maxSizeBytes: 3 * 1024 * 1024,
+      maxSizeBytes: 10 * 1024 * 1024,
       folder,
       context: metadata,
     });

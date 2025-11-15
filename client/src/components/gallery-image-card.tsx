@@ -2,10 +2,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Settings2 } from "lucide-react";
 import { useState } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { useMediaStore } from "@/store/media-store";
 import type { PROPS } from "@/data/image-props";
+import getOptimizedVideoUrl from "@/utils/get-optimized-video-url";
 
 type ImageCardProps = {
   id: string;
@@ -16,7 +23,14 @@ type ImageCardProps = {
   [key: string]: any; // extra metadata
 };
 
-export default function ImageCard({ id, name, src, prop, type, ...rest }: ImageCardProps) {
+export default function ImageCard({
+  id,
+  name,
+  src,
+  prop,
+  type,
+  ...rest
+}: ImageCardProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const { updateStore, getSelection } = useMediaStore();
@@ -31,9 +45,22 @@ export default function ImageCard({ id, name, src, prop, type, ...rest }: ImageC
   };
 
   // 👇 Detect media type automatically if not explicitly given
-  const isVideo = type
-    ? type === "video"
-    : /\.(mp4|webm|ogg)$/i.test(src);
+  const isVideo = (type: string | undefined, src: string): boolean => {
+    // 1. Check the explicit 'type' variable (retains original logic for the first part)
+    if (type) {
+      return type === "video";
+    }
+
+    // 2. Check the Cloudinary URL structure
+    // This is the most reliable way for Cloudinary URLs.
+    if (src.includes("/video/upload/")) {
+      return true;
+    } else {
+      return false;
+    }
+  };
+  console.log(src);
+  console.log(isVideo);
 
   return (
     <div className="flex justify-center items-center mt-10">
@@ -47,9 +74,9 @@ export default function ImageCard({ id, name, src, prop, type, ...rest }: ImageC
       >
         {/* MEDIA PREVIEW */}
         <div className="relative w-full h-40 -m-px rounded-t-xl overflow-hidden">
-          {isVideo ? (
+          {isVideo(type, src) ? (
             <video
-              src={src}
+              src={getOptimizedVideoUrl(src)}
               className="w-full h-full object-cover"
               muted
               loop
@@ -73,7 +100,9 @@ export default function ImageCard({ id, name, src, prop, type, ...rest }: ImageC
         <CardContent className="p-3 -mt-6 border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-gray-900 truncate">{name}</h3>
+              <h3 className="text-sm font-semibold text-gray-900 truncate">
+                {name}
+              </h3>
             </div>
 
             {/* SETTINGS BUTTON */}
