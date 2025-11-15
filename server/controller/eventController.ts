@@ -154,5 +154,6 @@ eventRouter.delete("/delete", async (c: Context) => {
   } catch (err: any) {
     console.error("Error deleting events:", err);
     return c.json({ error: "Failed to delete events" }, 500);
-  }a
+  }
+  a;
 });

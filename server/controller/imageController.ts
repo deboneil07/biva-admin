@@ -96,6 +96,7 @@ export const getImage = async (c: Context) => {
           public_id: img.public_id,
           position: img.context?.custom?.position,
           url: img.secure_url,
+          venue_img_url: img.context?.custom?.venue_img_url,
         })),
       });
     } else if (param.includes("gallery")) {
