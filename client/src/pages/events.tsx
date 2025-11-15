@@ -16,10 +16,13 @@ export default function EventsPage() {
         } else if (Array.isArray(data?.data)) {
             eventsArray = data.data;
         } else if (data) {
-            const arrayInData = Object.values(data).find(v => Array.isArray(v));
+            const arrayInData = Object.values(data).find((v) =>
+                Array.isArray(v),
+            );
             if (arrayInData) eventsArray = arrayInData as any[];
         }
 
+        console.log(eventsArray);
         return eventsArray.map((event: any, index: number) => ({
             event_id: event.event_id || event.id || `event-${index}`,
             price: event.ticket_price || "N/A",
@@ -29,7 +32,7 @@ export default function EventsPage() {
             time: event.time || "N/A",
             public_id: event.public_id,
             url: event.url,
-            ...event
+            ...event,
         }));
     }, [data]);
 
