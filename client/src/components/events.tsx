@@ -695,40 +695,50 @@ function TableCellViewer({
     );
 }
 
-// // Sample fake data for testing
-// export const sampleEvents: TableDataType[] = [
-//     {
-//         event_id: "EVT-2024-001",
-//         price: "15000",
-//         name: "Wedding Reception",
-//         group_name: "Sharma Family",
-//         date: "2024-12-25",
-//         time: "18:00",
-//         public_id: "event_wedding_reception_001",
-//         url: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=400&h=300&fit=crop",
-//     },
-//     {
-//         event_id: "EVT-2024-002",
-//         price: "8500",
-//         name: "Birthday Party",
-//         group_name: "Patel Celebration",
-//         date: "2024-11-15",
-//         time: "16:00",
-//         public_id: "event_birthday_party_002",
-//         url: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&h=300&fit=crop",
-//     },
-//     {
-//         event_id: "EVT-2024-003",
-//         price: "12000",
-//         name: "Corporate Meeting",
-//         group_name: "Tech Solutions Ltd",
-//         date: "2024-10-30",
-//         time: "10:00",
-//         public_id: "event_corporate_meeting_003",
-//         url: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=400&h=300&fit=crop",
-//     },
-//     {
-//         public_id: "event_anniversary_004",
-//         url: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=400&h=300&fit=crop",
-//     },
-// ];
+// Sample fake data for testing
+export const sampleEvents: TableDataType[] = [
+    {
+        event_id: "EVT-2024-001",
+        price: "15000",
+        name: "Wedding Reception",
+        group_name: "Sharma Family",
+        date: "2024-12-25",
+        time: "18:00",
+        public_id: "event_wedding_reception_001",
+        url: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=400&h=300&fit=crop",
+        venue_image: "",
+    },
+    {
+        event_id: "EVT-2024-002",
+        price: "8500",
+        name: "Birthday Party",
+        group_name: "Patel Celebration",
+        date: "2024-11-15",
+        time: "16:00",
+        public_id: "event_birthday_party_002",
+        url: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&h=300&fit=crop",
+        venue_image: "",
+    },
+    {
+        event_id: "EVT-2024-003",
+        price: "12000",
+        name: "Corporate Meeting",
+        group_name: "Tech Solutions Ltd",
+        date: "2024-10-30",
+        time: "10:00",
+        public_id: "event_corporate_meeting_003",
+        url: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=400&h=300&fit=crop",
+        venue_image: "",
+    },
+    {
+        event_id: "EVT-2024-003",
+        price: "12000",
+        name: "Corporate Meeting",
+        group_name: "Tech Solutions Ltd",
+        date: "2024-10-30",
+        time: "10:00",
+        public_id: "event_corporate_meeting_003",
+        url: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=400&h=300&fit=crop",
+        venue_image: "",
+    },
+];
