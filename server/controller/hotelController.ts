@@ -133,7 +133,7 @@ hotelRouter.delete("/delete", async (c: Context) => {
     console.log("DELETE GOT THIS BODY", body);
 
     // 1. Get the room_type from the body
-    const room_type: string = body["room_type"];
+    const room_type: string[] = body["room_type"];
 
     if (!room_type || typeof room_type !== "string") {
       return c.json(
