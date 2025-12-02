@@ -63,6 +63,9 @@ hotelRouter.post("/create", async (c: Context) => {
 
     // 5. Separate the first image from the "other" images
     const [primaryImage, ...otherImages] = hotel_images;
+    console.log("HOTEL IMAGES LENGTH: ", hotel_images.length);
+    console.log([primaryImage]);
+    console.log(otherImages);
 
     // 6. Upload the primary image for the main database record
     const uploadPrimaryImage: UploadFileResult | undefined =
@@ -92,16 +95,16 @@ hotelRouter.post("/create", async (c: Context) => {
     let otherImageUrls: string[] = [];
     if (otherImages.length > 0) {
       console.log(`Uploading ${otherImages.length} additional images...`);
-      const uploadResults = await uploadMediaMethod(
-        otherImages,
-        "hotel-rooms",
-        {
+      const uploadResults = await uploadMultipleMedia(otherImages, {
+        folder: "hotel-rooms", // Standard Cloudinary option
+        context: {
+          // Custom metadata must be inside 'context'
           price: price.toString(),
           description: description || "",
           room_type: room_type,
           position: position || "",
         },
-      );
+      });
       console.log(uploadResults);
     }
 
