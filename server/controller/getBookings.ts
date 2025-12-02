@@ -16,19 +16,7 @@ getBookingsRouter.get(
   hasRole(["employee", "admin"]),
   async (c: Context) => {
     const result = await db
-      .select({
-        id: hotelRoomReservation.id,
-        application_id: hotelRoomReservation.applicationId,
-        name: hotelRoomReservation.name,
-        email: hotelRoomReservation.email,
-        aadhar_or_pan_img_url: hotelRoomReservation.aadharOrPanImgUrl,
-        phone_number: hotelRoomReservation.phoneNumber,
-        total_people: hotelRoomReservation.totalPeople,
-        total_rooms: hotelRoomReservation.totalRooms,
-        paid: hotelRoomReservation.paid,
-        total_amount: hotelRoomReservation.totalAmount,
-        created_at: hotelRoomReservation.createdAt,
-      })
+      .select()
       .from(hotelRoomReservation)
       .orderBy(desc(hotelRoomReservation.createdAt));
     return c.json({ data: result }, 200);
