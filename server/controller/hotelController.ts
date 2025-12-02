@@ -1,7 +1,11 @@
 import { Hono, type Context } from "hono";
 import { db } from "../db";
 import type { UploadFileResult } from "../utils/cloudinary-service";
-import { deleteMediaFunction, uploadMediaMethod } from "./imageController";
+import {
+  deleteMediaFunction,
+  uploadMediaMethod,
+  uploadMultipleMedia,
+} from "./imageController";
 import { adminHotelRoomReservation } from "../drizzle/schema";
 import { eq, inArray } from "drizzle-orm";
 import { convertUrlsToPublicId } from "../utils/getPublicIdFromUrl";

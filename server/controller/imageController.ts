@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import {
   CloudinaryService,
   type UploadFileResult,
+  type UploadOptions,
 } from "../utils/cloudinary-service.ts";
 
 const cloudService = new CloudinaryService();
@@ -275,6 +276,38 @@ export const uploadMediaMethod = async (
   });
   return res;
 };
+
+export async function uploadMultipleMedia(
+  sources: (File | Buffer | ArrayBuffer | Uint8Array | string)[],
+  options: UploadOptions = {},
+) {
+  const {
+    folder,
+    public_id,
+    tags,
+    allowedMimeTypes,
+    context,
+    forceResourceType,
+    maxSizeBytes,
+  } = options;
+
+  if (!sources || sources.length === 0) {
+    throw new Error("No sources provided");
+  }
+
+  try {
+    const uploadPromises = sources.map((source) =>
+      cloudService.uploadMedia(source, options),
+    );
+
+    const results = await Promise.all(uploadPromises);
+    return results;
+  } catch (error: any) {
+    console.error("media upload or multiple media upload failed!", error);
+    throw new Error(`Batch uploading failed: ${error.message}`);
+  }
+}
+
 export const deleteMediaController = async (c: Context) => {
   try {
     const body = await c.req.json();

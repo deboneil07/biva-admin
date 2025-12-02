@@ -19,7 +19,6 @@ getBookingsRouter.get(
       .select({
         id: hotelRoomReservation.id,
         application_id: hotelRoomReservation.applicationId,
-        room_number: hotelRoomReservation.roomNumber,
         name: hotelRoomReservation.name,
         email: hotelRoomReservation.email,
         aadhar_or_pan_img_url: hotelRoomReservation.aadharOrPanImgUrl,
