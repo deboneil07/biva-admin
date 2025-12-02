@@ -31,6 +31,7 @@ import {
 } from "@tanstack/react-table";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import * as XLSX from "xlsx";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +55,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { Eye } from "lucide-react";
+import { Eye, Download } from "lucide-react";
 
 export type TableDataType = {
     id: number;
@@ -123,7 +124,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     },
     {
         accessorKey: "status",
-        header: "Status",
+        header: "Table Status",
         cell: ({ row }) => {
             const status = row.original.status;
             return (
@@ -141,9 +142,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
                                 ? "bg-green-100 text-green-800"
                                 : status === "occupied"
                                   ? "bg-red-100 text-red-800"
-                                  : status === "reserved"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : "bg-gray-100 text-gray-800"
+                                  : "bg-gray-100 text-gray-800"
                         }`}
                     >
                         {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -248,6 +247,66 @@ export function FoodCourtEventBookings({
         getFacetedUniqueValues: getFacetedUniqueValues(),
     });
 
+    // Excel export function
+    const exportToExcel = () => {
+        try {
+            // Prepare data for Excel export
+            const exportData = data.map((item: TableDataType) => ({
+                "Booking ID": item.id,
+                "Event ID": item.eventId,
+                "Customer Name": item.name,
+                Email: item.email,
+                "Phone Number": item.phoneNumber,
+                "Total People": item.totalPeople,
+                "Table Status":
+                    item.status.charAt(0).toUpperCase() + item.status.slice(1),
+                "Total Amount (₹)": item.totalAmount,
+                "Payment Status": item.paid ? "Paid" : "Unpaid",
+                "Created At": new Date(item.createdAt).toLocaleString(),
+                "Document URL": item.aadharOrPanImgUrl,
+            }));
+
+            // Create workbook and worksheet
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(
+                workbook,
+                worksheet,
+                "Food Court Event Bookings",
+            );
+
+            // Auto-size columns
+            const columnWidths = [
+                { wch: 12 }, // Booking ID
+                { wch: 25 }, // Event ID
+                { wch: 20 }, // Customer Name
+                { wch: 25 }, // Email
+                { wch: 15 }, // Phone Number
+                { wch: 12 }, // Total People
+                { wch: 15 }, // Table Status
+                { wch: 15 }, // Total Amount
+                { wch: 15 }, // Payment Status
+                { wch: 20 }, // Created At
+                { wch: 30 }, // Document URL
+            ];
+            worksheet["!cols"] = columnWidths;
+
+            // Generate filename with current date
+            const currentDate = new Date().toISOString().split("T")[0];
+            const filename = `food-court-event-bookings-${currentDate}.xlsx`;
+
+            // Download the file
+            XLSX.writeFile(workbook, filename);
+
+            toast.success(`Excel file downloaded successfully: ${filename}`);
+        } catch (err) {
+            console.error("Error exporting to Excel:", err);
+            toast.error("Failed to export data to Excel");
+        }
+    };
+
     return (
         <Tabs
             defaultValue="outline"
@@ -258,6 +317,16 @@ export function FoodCourtEventBookings({
                     <h1 className="text-5xl font-bold">
                         Food Court Event Bookings
                     </h1>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={exportToExcel}
+                        disabled={isLoading || !data.length}
+                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                        <Download size={16} />
+                        Export to Excel
+                    </Button>
                 </div>
             </div>
 
@@ -455,7 +524,7 @@ function TableCellViewer({
                                 />
                             </div>
                             <div className="flex flex-col gap-3">
-                                <Label htmlFor="status">Status</Label>
+                                <Label htmlFor="status">Table Status</Label>
                                 <Input
                                     id="status"
                                     defaultValue={item.status}
@@ -509,34 +578,34 @@ function TableCellViewer({
     );
 }
 
-// Sample fake data for testing with updated field names
+// Sample fake data for testing
 export const sampleFoodCourtEventBookings: TableDataType[] = [
     {
-        id: 1,
-        name: "Rahul Sharma",
-        email: "rahul.sharma@email.com",
+        id: 153,
+        name: "John Doe",
+        email: "john.doe@gmail.com",
         aadharOrPanImgUrl:
-            "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop",
-        phoneNumber: "+91-9876543210",
-        totalPeople: 12,
-        eventId: "EVT-2024-DIWALI-001",
+            "https://res.cloudinary.com/dnkdf29za/image/upload/v1764680555/officialDocumentImageForVisitors/bxfkxcrmnpmf1whnqg4e.jpg",
+        phoneNumber: "9335721522777",
+        totalPeople: 4,
+        eventId: "ws3vM1M2Lc3haWP4rmEoRQ",
         paid: true,
-        totalAmount: 8500,
-        createdAt: "2024-10-12T10:00:00Z",
-        status: "reserved",
+        totalAmount: 3200,
+        createdAt: "2025-12-02 13:02:36.106982",
+        status: "occupied",
     },
     {
-        id: 2,
-        name: "Anita Desai",
-        email: "anita.desai@gmail.com",
+        id: 154,
+        name: "Jane Smith",
+        email: "jane.smith@email.com",
         aadharOrPanImgUrl:
-            "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
-        phoneNumber: "+91-8765432109",
-        totalPeople: 6,
-        eventId: "EVT-2024-BIRTHDAY-002",
+            "https://res.cloudinary.com/dnkdf29za/image/upload/v1764680555/officialDocumentImageForVisitors/sample2.jpg",
+        phoneNumber: "8765432109",
+        totalPeople: 2,
+        eventId: "ev2NM8X5Pq7hgRT6anFpSL",
         paid: false,
-        totalAmount: 4200,
-        createdAt: "2024-10-13T14:30:00Z",
+        totalAmount: 1800,
+        createdAt: "2025-12-03 10:15:22.543210",
         status: "available",
     },
 ];

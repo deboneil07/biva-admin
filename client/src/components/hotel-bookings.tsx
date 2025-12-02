@@ -32,6 +32,7 @@ import {
 } from "@tanstack/react-table";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import * as XLSX from "xlsx";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +57,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { Eye } from "lucide-react";
+import { Eye, Download } from "lucide-react";
 
 export type TableDataType = {
     id: number;
@@ -103,26 +104,19 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     },
     {
         accessorKey: "name",
-        header: "Guest Name",
+        header: "Customer Name",
         cell: ({ row }) => (
             <div className="text-sm font-medium">{row.original.name}</div>
         ),
     },
     {
-        accessorKey: "roomType",
-        header: "Room Type",
-        cell: ({ row }) => (
-            <div className="text-sm">
-                <Badge variant="outline" className="capitalize">
-                    {row.original.roomType}
-                </Badge>
-            </div>
-        ),
-    },
-    {
         accessorKey: "email",
         header: "Email",
-        cell: ({ row }) => <div className="text-sm">{row.original.email}</div>,
+        cell: ({ row }) => (
+            <div className="text-sm max-w-[200px] truncate">
+                {row.original.email}
+            </div>
+        ),
     },
     {
         accessorKey: "phoneNumber",
@@ -132,18 +126,45 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
         ),
     },
     {
-        accessorKey: "totalRooms",
-        header: "Rooms",
+        accessorKey: "roomType",
+        header: "Room Type",
         cell: ({ row }) => (
-            <div className="text-sm text-center">{row.original.totalRooms}</div>
+            <div className="text-sm font-medium">{row.original.roomType}</div>
         ),
     },
     {
         accessorKey: "totalPeople",
-        header: "Guests",
+        header: "People",
         cell: ({ row }) => (
             <div className="text-sm text-center">
                 {row.original.totalPeople}
+            </div>
+        ),
+    },
+    {
+        accessorKey: "totalRooms",
+        header: "Rooms",
+        cell: ({ row }) => (
+            <div className="text-sm text-center font-medium">
+                {row.original.totalRooms}
+            </div>
+        ),
+    },
+    {
+        accessorKey: "joinDate",
+        header: "Check In",
+        cell: ({ row }) => (
+            <div className="text-sm">
+                {new Date(row.original.joinDate).toLocaleDateString()}
+            </div>
+        ),
+    },
+    {
+        accessorKey: "leaveDate",
+        header: "Check Out",
+        cell: ({ row }) => (
+            <div className="text-sm">
+                {new Date(row.original.leaveDate).toLocaleDateString()}
             </div>
         ),
     },
@@ -157,26 +178,8 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
         ),
     },
     {
-        accessorKey: "joinDate",
-        header: "Check-in",
-        cell: ({ row }) => (
-            <div className="text-sm">
-                {new Date(row.original.joinDate).toLocaleDateString()}
-            </div>
-        ),
-    },
-    {
-        accessorKey: "leaveDate",
-        header: "Check-out",
-        cell: ({ row }) => (
-            <div className="text-sm">
-                {new Date(row.original.leaveDate).toLocaleDateString()}
-            </div>
-        ),
-    },
-    {
         accessorKey: "paid",
-        header: "Status",
+        header: "Payment",
         cell: ({ row }) => {
             const isPaid = row.original.paid;
 
@@ -261,6 +264,80 @@ export function HotelBookings({
         getFacetedUniqueValues: getFacetedUniqueValues(),
     });
 
+    // Excel export function
+    const exportToExcel = () => {
+        try {
+            // Calculate stay duration for each booking
+            const exportData = data.map((item: TableDataType) => {
+                const joinDate = new Date(item.joinDate);
+                const leaveDate = new Date(item.leaveDate);
+                const stayDuration = Math.ceil(
+                    (leaveDate.getTime() - joinDate.getTime()) /
+                        (1000 * 3600 * 24),
+                );
+
+                return {
+                    "Booking ID": item.id,
+                    "Application ID": item.applicationId,
+                    "Customer Name": item.name,
+                    Email: item.email,
+                    "Phone Number": item.phoneNumber,
+                    "Room Type": item.roomType,
+                    "Total People": item.totalPeople,
+                    "Total Rooms": item.totalRooms,
+                    "Check In Date": joinDate.toLocaleDateString(),
+                    "Check Out Date": leaveDate.toLocaleDateString(),
+                    "Stay Duration (Days)": stayDuration > 0 ? stayDuration : 1,
+                    "Total Amount (₹)": item.totalAmount,
+                    "Payment Status": item.paid ? "Paid" : "Unpaid",
+                    "Booking Created At": new Date(
+                        item.createdAt,
+                    ).toLocaleString(),
+                    "Document URL": item.aadharOrPanImgUrl,
+                };
+            });
+
+            // Create workbook and worksheet
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Hotel Bookings");
+
+            // Auto-size columns
+            const columnWidths = [
+                { wch: 12 }, // Booking ID
+                { wch: 25 }, // Application ID
+                { wch: 20 }, // Customer Name
+                { wch: 25 }, // Email
+                { wch: 15 }, // Phone Number
+                { wch: 15 }, // Room Type
+                { wch: 12 }, // Total People
+                { wch: 12 }, // Total Rooms
+                { wch: 15 }, // Check In Date
+                { wch: 15 }, // Check Out Date
+                { wch: 18 }, // Stay Duration
+                { wch: 15 }, // Total Amount
+                { wch: 15 }, // Payment Status
+                { wch: 20 }, // Booking Created At
+                { wch: 30 }, // Document URL
+            ];
+            worksheet["!cols"] = columnWidths;
+
+            // Generate filename with current date
+            const currentDate = new Date().toISOString().split("T")[0];
+            const filename = `hotel-bookings-${currentDate}.xlsx`;
+
+            // Download the file
+            XLSX.writeFile(workbook, filename);
+
+            toast.success(`Excel file downloaded successfully: ${filename}`);
+        } catch (err) {
+            console.error("Error exporting to Excel:", err);
+            toast.error("Failed to export data to Excel");
+        }
+    };
+
     return (
         <Tabs
             defaultValue="outline"
@@ -269,6 +346,16 @@ export function HotelBookings({
             <div className="flex items-center justify-between px-4 lg:px-6">
                 <div>
                     <h1 className="text-5xl font-bold">Hotel Bookings</h1>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={exportToExcel}
+                        disabled={isLoading || !data.length}
+                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                        <Download size={16} />
+                        Export to Excel
+                    </Button>
                 </div>
             </div>
 
@@ -367,11 +454,10 @@ function TableCellViewer({
     const isMobile = useIsMobile();
     const [isOpen, setIsOpen] = React.useState(false);
 
-    // Calculate stay duration
     const joinDate = new Date(item.joinDate);
     const leaveDate = new Date(item.leaveDate);
     const stayDuration = Math.ceil(
-        (leaveDate.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24),
+        (leaveDate.getTime() - joinDate.getTime()) / (1000 * 3600 * 24),
     );
 
     return (
@@ -392,244 +478,179 @@ function TableCellViewer({
             </DrawerTrigger>
             <DrawerContent>
                 <DrawerHeader className="gap-1">
-                    <DrawerTitle>Booking Details - {item.name}</DrawerTitle>
+                    <DrawerTitle>
+                        Hotel Booking Details - {item.name}
+                    </DrawerTitle>
                     <DrawerDescription>
                         Application ID: {item.applicationId}
                     </DrawerDescription>
                 </DrawerHeader>
-                <div className="flex flex-col gap-6 overflow-y-auto px-4 text-sm">
-                    {/* Guest Information */}
-                    <div className="space-y-4">
-                        <h3 className="text-base font-semibold border-b pb-2">
-                            Guest Information
-                        </h3>
-
-                        <div className="grid gap-4">
-                            <div className="flex flex-col gap-2">
-                                <Label>Guest Name</Label>
-                                <Input
-                                    defaultValue={item.name}
-                                    disabled
-                                    className="bg-muted"
-                                />
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label>Email</Label>
-                                <Input
-                                    defaultValue={item.email}
-                                    disabled
-                                    className="bg-muted"
-                                />
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label>Phone Number</Label>
-                                <Input
-                                    defaultValue={item.phoneNumber}
-                                    disabled
-                                    className="bg-muted"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Document Section */}
-                    <div className="space-y-4">
-                        <h3 className="text-base font-semibold border-b pb-2">
-                            Identity Document
-                        </h3>
-
+                <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
+                    {/* Document Image Section */}
+                    <div className="grid gap-4">
                         <div className="flex flex-col gap-2">
                             <Label>Aadhar/PAN Document</Label>
-                            <div className="w-full max-w-sm h-32 rounded-lg overflow-hidden border bg-gray-50">
+                            <div className="w-32 h-20 rounded-lg overflow-hidden border">
                                 <img
                                     src={item.aadharOrPanImgUrl}
                                     alt="Aadhar/PAN Document"
-                                    className="w-full h-full object-contain cursor-pointer"
-                                    onClick={() =>
-                                        window.open(
-                                            item.aadharOrPanImgUrl,
-                                            "_blank",
-                                        )
-                                    }
+                                    className="w-full h-full object-cover"
                                 />
                             </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                    window.open(
-                                        item.aadharOrPanImgUrl,
-                                        "_blank",
-                                    )
-                                }
-                                className="w-fit"
-                            >
-                                View Full Size
-                            </Button>
                         </div>
                     </div>
 
-                    {/* Booking Details */}
-                    <div className="space-y-4">
-                        <h3 className="text-base font-semibold border-b pb-2">
-                            Booking Details
-                        </h3>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-2">
-                                <Label>Room Type</Label>
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="id">Booking ID</Label>
+                            <Input
+                                id="id"
+                                defaultValue={item.id.toString()}
+                                disabled
+                                className="font-mono text-xs bg-muted"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="applicationId">
+                                Application ID
+                            </Label>
+                            <Input
+                                id="applicationId"
+                                defaultValue={item.applicationId}
+                                disabled
+                                className="font-mono text-xs bg-muted"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="name">Customer Name</Label>
+                            <Input
+                                id="name"
+                                defaultValue={item.name}
+                                disabled
+                                className="bg-muted"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                defaultValue={item.email}
+                                disabled
+                                className="bg-muted"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="phone">Phone</Label>
+                            <Input
+                                id="phone"
+                                type="tel"
+                                defaultValue={item.phoneNumber}
+                                disabled
+                                className="bg-muted"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="flex flex-col gap-3">
+                                <Label htmlFor="roomType">Room Type</Label>
                                 <Input
+                                    id="roomType"
                                     defaultValue={item.roomType}
                                     disabled
-                                    className="bg-muted capitalize"
+                                    className="bg-muted"
                                 />
                             </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label>Total Rooms</Label>
+                            <div className="flex flex-col gap-3">
+                                <Label htmlFor="totalRooms">Total Rooms</Label>
                                 <Input
+                                    id="totalRooms"
+                                    type="number"
                                     defaultValue={item.totalRooms}
                                     disabled
                                     className="bg-muted"
                                 />
                             </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label>Total Guests</Label>
-                                <Input
-                                    defaultValue={item.totalPeople}
-                                    disabled
-                                    className="bg-muted"
-                                />
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label>Stay Duration</Label>
-                                <Input
-                                    defaultValue={`${stayDuration} day${stayDuration > 1 ? "s" : ""}`}
-                                    disabled
-                                    className="bg-muted"
-                                />
-                            </div>
                         </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-2">
-                                <Label>Check-in Date</Label>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="totalPeople">Total People</Label>
+                            <Input
+                                id="totalPeople"
+                                type="number"
+                                defaultValue={item.totalPeople}
+                                disabled
+                                className="bg-muted"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="flex flex-col gap-3">
+                                <Label htmlFor="joinDate">Check In Date</Label>
                                 <Input
+                                    id="joinDate"
                                     defaultValue={joinDate.toLocaleDateString()}
                                     disabled
                                     className="bg-muted"
                                 />
                             </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label>Check-out Date</Label>
+                            <div className="flex flex-col gap-3">
+                                <Label htmlFor="leaveDate">
+                                    Check Out Date
+                                </Label>
                                 <Input
+                                    id="leaveDate"
                                     defaultValue={leaveDate.toLocaleDateString()}
                                     disabled
                                     className="bg-muted"
                                 />
                             </div>
                         </div>
-                    </div>
-
-                    {/* Payment Information */}
-                    <div className="space-y-4">
-                        <h3 className="text-base font-semibold border-b pb-2">
-                            Payment Information
-                        </h3>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-2">
-                                <Label>Total Amount</Label>
-                                <Input
-                                    defaultValue={`₹${item.totalAmount.toLocaleString()}`}
-                                    disabled
-                                    className="bg-muted font-medium"
-                                />
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label>Payment Status</Label>
-                                <div className="flex items-center gap-2">
-                                    <Badge
-                                        variant={
-                                            item.paid
-                                                ? "default"
-                                                : "destructive"
-                                        }
-                                        className={`${
-                                            item.paid
-                                                ? "bg-green-100 text-green-800"
-                                                : "bg-red-100 text-red-800"
-                                        }`}
-                                    >
-                                        {item.paid ? "Paid" : "Unpaid"}
-                                    </Badge>
-                                </div>
-                            </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="duration">Stay Duration</Label>
+                            <Input
+                                id="duration"
+                                defaultValue={`${stayDuration > 0 ? stayDuration : 1} day${stayDuration !== 1 ? "s" : ""}`}
+                                disabled
+                                className="bg-muted"
+                            />
                         </div>
-                    </div>
-
-                    {/* System Information */}
-                    <div className="space-y-4">
-                        <h3 className="text-base font-semibold border-b pb-2">
-                            System Information
-                        </h3>
-
-                        <div className="grid gap-4">
-                            <div className="flex flex-col gap-2">
-                                <Label>Application ID</Label>
-                                <div className="flex items-center gap-2">
-                                    <Input
-                                        defaultValue={item.applicationId}
-                                        disabled
-                                        className="font-mono text-xs bg-muted"
-                                    />
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(
-                                                item.applicationId,
-                                            );
-                                            toast.success(
-                                                "Application ID copied",
-                                            );
-                                        }}
-                                    >
-                                        Copy
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <Label>Booking Created</Label>
-                                <Input
-                                    defaultValue={new Date(
-                                        item.createdAt,
-                                    ).toLocaleString()}
-                                    disabled
-                                    className="bg-muted"
-                                />
-                            </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="amount">Total Amount</Label>
+                            <Input
+                                id="amount"
+                                defaultValue={`₹${item.totalAmount.toLocaleString()}`}
+                                disabled
+                                className="bg-muted"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="paid">Payment Status</Label>
+                            <Input
+                                id="paid"
+                                defaultValue={item.paid ? "Paid" : "Unpaid"}
+                                disabled
+                                className="bg-muted"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            <Label htmlFor="created">Booking Created At</Label>
+                            <Input
+                                id="created"
+                                defaultValue={new Date(
+                                    item.createdAt,
+                                ).toLocaleString()}
+                                disabled
+                                className="bg-muted"
+                            />
                         </div>
                     </div>
                 </div>
-
                 <DrawerFooter>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsOpen(false)}
-                            className="flex-1"
-                        >
-                            Close
-                        </Button>
-                    </div>
+                    <Button
+                        variant="outline"
+                        onClick={() => setIsOpen(false)}
+                        className="w-full"
+                    >
+                        Close
+                    </Button>
                 </DrawerFooter>
             </DrawerContent>
         </Drawer>
@@ -637,35 +658,39 @@ function TableCellViewer({
 }
 
 // Sample fake data for testing
-// export const sampleHotelBookings: TableDataType[] = [
-//     {
-//         id: 1,
-//         application_id: "HB-2024-001-ABC123",
-//         room_number: ["101", "102"],
-//         name: "Rajesh Kumar",
-//         email: "rajesh.kumar@email.com",
-//         aadhar_or_pan_img_url:
-//             "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop",
-//         phone_number: "+91-9876543210",
-//         total_people: 4,
-//         total_rooms: 2,
-//         paid: true,
-//         total_amount: 8500,
-//         createdAt: "2024-10-12T14:30:00Z",
-//     },
-//     {
-//         id: 2,
-//         application_id: "HB-2024-002-XYZ789",
-//         room_number: ["205"],
-//         name: "Priya Sharma",
-//         email: "priya.sharma@gmail.com",
-//         aadhar_or_pan_img_url:
-//             "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
-//         phone_number: "+91-8765432109",
-//         total_people: 2,
-//         total_rooms: 1,
-//         paid: false,
-//         total_amount: 3200,
-//         createdAt: "2024-10-13T09:15:00Z",
-//     },
-// ];
+export const sampleHotelBookings: TableDataType[] = [
+    {
+        id: 1,
+        applicationId: "HTL001-2024-001",
+        name: "Rajesh Kumar",
+        email: "rajesh.kumar@email.com",
+        aadharOrPanImgUrl:
+            "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop",
+        phoneNumber: "+91-9876543210",
+        roomType: "Deluxe",
+        totalPeople: 2,
+        totalRooms: 1,
+        paid: true,
+        totalAmount: 4500,
+        joinDate: "2024-12-15T14:00:00Z",
+        leaveDate: "2024-12-18T11:00:00Z",
+        createdAt: "2024-12-10T10:30:00Z",
+    },
+    {
+        id: 2,
+        applicationId: "HTL001-2024-002",
+        name: "Priya Sharma",
+        email: "priya.sharma@gmail.com",
+        aadharOrPanImgUrl:
+            "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop",
+        phoneNumber: "+91-8765432109",
+        roomType: "Suite",
+        totalPeople: 4,
+        totalRooms: 2,
+        paid: false,
+        totalAmount: 8000,
+        joinDate: "2024-12-20T15:00:00Z",
+        leaveDate: "2024-12-25T12:00:00Z",
+        createdAt: "2024-12-12T09:15:00Z",
+    },
+];
