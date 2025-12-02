@@ -15,9 +15,12 @@ export default function HotelRoomsPage() {
     const existingRoomTypes = useMemo(() => {
         const types = rooms
             .map((room: any) => room.room_type)
-            .filter((type: any) => type && typeof type === 'string')
-            .filter((type: string, index: number, arr: string[]) => arr.indexOf(type) === index); // unique values
-        
+            .filter((type: any) => type && typeof type === "string")
+            .filter(
+                (type: string, index: number, arr: string[]) =>
+                    arr.indexOf(type) === index,
+            ); // unique values
+
         console.log("Extracted room types:", types);
         return types;
     }, [rooms]);
@@ -25,14 +28,14 @@ export default function HotelRoomsPage() {
     return (
         <div className="flex flex-1 flex-col">
             <div className="@container/main flex flex-1 flex-col gap-2">
-            <RoomUpload 
-                prop="rooms" 
-                existingRoomTypes={existingRoomTypes} 
-                onUploadSuccess={refetch}
-            />
+                <RoomUpload
+                    prop="rooms"
+                    existingRoomTypes={existingRoomTypes}
+                    onUploadSuccess={refetch}
+                />
                 <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
                     <HotelRooms
-                        data={rooms }
+                        data={rooms}
                         isLoading={isLoading}
                         error={error}
                         onDeleteSuccess={refetch}
@@ -42,6 +45,3 @@ export default function HotelRoomsPage() {
         </div>
     );
 }
-
-
-

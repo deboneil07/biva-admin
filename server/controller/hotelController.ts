@@ -62,7 +62,7 @@ hotelRouter.post("/create", async (c: Context) => {
 
     // 6. Upload the primary image for the main database record
     const uploadPrimaryImage: UploadFileResult | undefined =
-      await uploadMediaMethod(primaryImage, "hotel", {
+      await uploadMediaMethod(primaryImage, "hotel-rooms", {
         price: price.toString(),
         description: description || "",
         room_type: room_type,
@@ -88,12 +88,16 @@ hotelRouter.post("/create", async (c: Context) => {
     let otherImageUrls: string[] = [];
     if (otherImages.length > 0) {
       console.log(`Uploading ${otherImages.length} additional images...`);
-      const uploadResults = await uploadMediaMethod(otherImages, "hotel", {
-        price: price.toString(),
-        description: description || "",
-        room_type: room_type,
-        position: position || "",
-      });
+      const uploadResults = await uploadMediaMethod(
+        otherImages,
+        "hotel-rooms",
+        {
+          price: price.toString(),
+          description: description || "",
+          room_type: room_type,
+          position: position || "",
+        },
+      );
       console.log(uploadResults);
     }
 
