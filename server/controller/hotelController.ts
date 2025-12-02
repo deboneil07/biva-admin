@@ -135,74 +135,58 @@ hotelRouter.delete("/delete", async (c: Context) => {
     // 1. Get the room_type from the body
     const room_type: string[] = body["room_type"];
 
-    if (!room_type || typeof room_type !== "string") {
+    if (!room_types || !Array.isArray(room_types) || room_types.length === 0) {
       return c.json(
-        { error: "Invalid or missing 'room_type' in request body." },
+        {
+          error: "Invalid or empty 'room_type' array provided in request body.",
+        },
         400,
       );
     }
 
-    // Initialize an instance of your Cloudinary service
+    // 1. Instantiate the service ONCE
     const cloudinaryService = new CloudinaryService();
 
-    // 2. Find all images in Cloudinary with the matching context
-    console.log(
-      `Searching for images in Cloudinary with room_type: ${room_type}`,
-    );
-    const imagesToDelete = await cloudinaryService.listByMetadata(
-      "room_type", // The metadata key
-      room_type, // The metadata value
-      "hotel-rooms", // The folder to search within
+    // 2. Call the new method to handle all Cloudinary logic
+    const imageDeletionResult = await cloudinaryService.deleteRoomsByTypes(
+      room_types,
+      "hotel-rooms",
     );
 
-    if (imagesToDelete.length === 0) {
-      console.log(`No images found in Cloudinary for room_type: ${room_type}`);
-    } else {
-      console.log(
-        `Found ${imagesToDelete.length} images to delete from Cloudinary.`,
-      );
-    }
-
-    // 3. Delete the images from Cloudinary
-    const publicIdsToDelete = imagesToDelete.map((img) => img.public_id);
-    let cloudinaryDeleteResult;
-    if (publicIdsToDelete.length > 0) {
-      cloudinaryDeleteResult =
-        await cloudinaryService.deleteImageVideo(publicIdsToDelete);
-      console.log("Cloudinary deletion result:", cloudinaryDeleteResult);
-    }
-
-    // 4. Delete the room records from the database
+    // 3. Delete the room records from the database
     console.log(
-      `Deleting room records from database with typeOfRoom: ${room_type}`,
+      `Deleting room records from database with typeOfRoom in: ${room_types}`,
     );
     const deletedRooms = await db
       .delete(adminHotelRoomReservation)
-      .where(eq(adminHotelRoomReservation.typeOfRoom, room_type))
+      .where(inArray(adminHotelRoomReservation.typeOfRoom, room_types))
       .returning({
-        // Return the room numbers of the deleted records
         room_number: adminHotelRoomReservation.roomNumber,
+        typeOfRoom: adminHotelRoomReservation.typeOfRoom,
       });
 
     if (deletedRooms.length === 0) {
       return c.json(
         {
-          error: `No hotel rooms found in the database with room_type: ${room_type}`,
+          error: `No hotel rooms found in the database with room_types: ${room_types.join(", ")}`,
         },
         404,
       );
     }
 
-    // 5. Return a success response with details
+    // 4. Return a success response with details from both operations
     return c.json(
       {
         success: true,
-        message: `Successfully deleted all rooms and associated images for room_type: ${room_type}`,
+        message: `Successfully deleted rooms and associated images for room_types: ${room_types.join(", ")}`,
         details: {
           deleted_db_records_count: deletedRooms.length,
-          deleted_room_numbers: deletedRooms.map((r) => r.room_number),
-          deleted_cloudinary_images_count: publicIdsToDelete.length,
-          cloudinary_deletion_status: cloudinaryDeleteResult
+          deleted_room_info: deletedRooms.map((r) => ({
+            number: r.room_number,
+            type: r.typeOfRoom,
+          })),
+          deleted_cloudinary_images_count: imageDeletionResult.foundImagesCount,
+          cloudinary_deletion_status: imageDeletionResult.deletionResult
             ? "Success"
             : "No images to delete",
         },

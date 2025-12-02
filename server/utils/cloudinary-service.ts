@@ -50,6 +50,59 @@ export class CloudinaryService {
     });
   }
 
+  async deleteRoomsByTypes(
+    roomTypes: string[],
+    folder: string,
+  ): Promise<{
+    foundImagesCount: number;
+    deletedImagePublicIds: string[];
+    deletionResult: any;
+  }> {
+    if (!roomTypes || roomTypes.length === 0) {
+      return {
+        foundImagesCount: 0,
+        deletedImagePublicIds: [],
+        deletionResult: null,
+      };
+    }
+
+    // 1. Build the search expression for Cloudinary
+    const roomTypeExpression = roomTypes
+      .map((type) => `context.room_type="${type}"`)
+      .join(" OR ");
+
+    console.log(
+      `[CloudinaryService] Searching for images with expression: ${roomTypeExpression}`,
+    );
+
+    // 2. Find all matching images using the search API
+    const searchResult = await Cloudinary.search
+      .expression(roomTypeExpression)
+      .with_field("context")
+      .max_results(500) // Adjust if you expect many images
+      .execute();
+
+    const imagesToDelete = searchResult.resources;
+    const publicIdsToDelete = imagesToDelete.map((img) => img.public_id);
+
+    console.log(
+      `[CloudinaryService] Found ${publicIdsToDelete.length} images to delete.`,
+    );
+
+    // 3. Delete the found images
+    let deletionResult = null;
+    if (publicIdsToDelete.length > 0) {
+      deletionResult = await this.deleteImageVideo(publicIdsToDelete);
+      console.log("[CloudinaryService] Deletion result:", deletionResult);
+    }
+
+    return {
+      foundImagesCount: imagesToDelete.length,
+      deletedImagePublicIds: publicIdsToDelete,
+      deletionResult,
+    };
+  }
+
   async deleteImageVideo(public_id: string[]) {
     try {
       const [imgRes, vidRes] = await Promise.all([
