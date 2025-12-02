@@ -296,15 +296,14 @@ export function RoomUpload({
             const formData = new FormData();
 
             // Add ALL files to the same FormData with array-like naming
-            selectedFiles.forEach((file) => {
-                formData.append(`file`, file); // This creates an array of files
-                // OR alternatively:
-                // formData.append(`files[${index}]`, file);
+            selectedFiles.forEach((file, index) => {
+                formData.append(`file_${index}`, file);
+                console.log(`📎 Appending file_${index}: ${file.name}`);
             });
 
             // Add folder
             formData.append("folder", folder);
-
+            formData.append("fileCount", selectedFiles.length.toString());
             console.log(
                 `📤 Uploading ${selectedFiles.length} files in single request`,
             );

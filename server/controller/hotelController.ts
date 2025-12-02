@@ -40,13 +40,20 @@ hotelRouter.post("/create", async (c: Context) => {
     const position =
       typeof body["position"] === "string" ? body["position"] : null;
 
+    const fileCount =
+      typeof body["fileCount"] === "string"
+        ? parseInt(body["fileCount"], 10)
+        : 0;
     // 3. Correctly get the array of ALL files named "file"
     const allFiles = body["file"];
-    const hotel_images = Array.isArray(allFiles)
-      ? allFiles.filter((file): file is File => file instanceof File)
-      : allFiles instanceof File
-        ? [allFiles]
-        : []; // Handle single file case
+    const hotel_images: File[] = [];
+    for (let i = 0; i < fileCount; i++) {
+      const file = body[`file_${i}`];
+      if (file instanceof File) {
+        hotel_images.push(file);
+        console.log(`Found file_${i}: ${file.name}`);
+      }
+    }
 
     // 4. Validate required fields
     if (
@@ -61,6 +68,8 @@ hotelRouter.post("/create", async (c: Context) => {
       );
     }
 
+    console.log("BODY", body);
+    console.log("HOTELIMAGES", hotel_images);
     // 5. Separate the first image from the "other" images
     const [primaryImage, ...otherImages] = hotel_images;
     console.log("HOTEL IMAGES LENGTH: ", hotel_images.length);
@@ -95,7 +104,7 @@ hotelRouter.post("/create", async (c: Context) => {
     let otherImageUrls: string[] = [];
     if (otherImages.length > 0) {
       console.log(`Uploading ${otherImages.length} additional images...`);
-      const uploadResults = await uploadMultipleMedia(otherImages, {
+      const uploadResults = await uploadMultipleMedia(hotel_images, {
         folder: "hotel-rooms", // Standard Cloudinary option
         context: {
           // Custom metadata must be inside 'context'

@@ -1,21 +1,21 @@
-import { create } from "zustand"
+import { create } from "zustand";
 
 interface RoomStore {
-  id: string[],
-  count: number
-  updateStore: (data: Partial<RoomStore>) => void
-  reset: () => void
+    selectedRoomTypes: string[]; // Changed from 'id' to 'selectedRoomTypes'
+    count: number;
+    updateStore: (data: Partial<RoomStore>) => void;
+    reset: () => void;
 }
 
 export const useRoomStore = create<RoomStore>((set) => ({
-  id: [],
-  count: 0,
+    selectedRoomTypes: [], // Changed from 'id: []'
+    count: 0,
 
-  updateStore: (data) => {
-    set((state) => ({ ...state, ...data }))
-  },
+    updateStore: (data) => {
+        set((state) => ({ ...state, ...data }));
+    },
 
-  reset: () => {
-    set({ id: [], count: 0 })
-  }
-}))
+    reset: () => {
+        set({ selectedRoomTypes: [], count: 0 }); // Updated reset
+    },
+}));
