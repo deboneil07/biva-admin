@@ -12,66 +12,85 @@ hotelRouter.get("/type-of-rooms", async (c: Context) => {});
 
 hotelRouter.post("/create", async (c: Context) => {
   try {
+    // 1. Correctly parse the body as FormData
     const body = await c.req.parseBody();
-    console.log(body);
 
-    const room_number =
-      typeof body["room_number"] === "string" ? body["room_number"] : null;
+    // 2. Safely extract and type-cast string fields
     const room_type =
       typeof body["room_type"] === "string" ? body["room_type"] : null;
-    const floor =
-      typeof body["floor"] === "string" ? parseInt(body["floor"]) : null;
+    const total_rooms =
+      typeof body["total_rooms"] === "string"
+        ? parseInt(body["total_rooms"], 10)
+        : null;
     const occupancy =
       typeof body["occupancy"] === "string"
-        ? parseInt(body["occupancy"])
+        ? parseInt(body["occupancy"], 10)
         : null;
     const description =
       typeof body["description"] === "string" ? body["description"] : null;
     const price =
-      typeof body["price"] === "string" ? parseInt(body["price"]) : null;
-    const occupied =
-      typeof body["occupied"] === "string" ? body["occupied"] === "true" : null;
-    const hotel_image =
-      body["file"] instanceof File ? (body["file"] as File) : null;
+      typeof body["price"] === "string" ? parseInt(body["price"], 10) : null;
     const position =
       typeof body["position"] === "string" ? body["position"] : null;
+
+    // 3. Correctly get the array of ALL files named "file"
+    const allFiles = body["file"];
+    const hotel_images = Array.isArray(allFiles)
+      ? allFiles.filter((file): file is File => file instanceof File)
+      : allFiles instanceof File
+        ? [allFiles]
+        : []; // Handle single file case
+
+    // 4. Validate required fields
     if (
-      room_number === null ||
-      room_type === null ||
-      floor === null ||
+      !room_type ||
       occupancy === null ||
       price === null ||
-      occupied === null ||
-      hotel_image === null
+      hotel_images.length === 0
     ) {
-      return c.json({ error: "Missing required fields" }, 400);
+      return c.json(
+        { error: "Missing required fields or no images provided." },
+        400,
+      );
     }
 
-    const uploadHotelImage: UploadFileResult | undefined =
-      await uploadMediaMethod(hotel_image, "hotel-rooms", {
+    // 5. Separate the first image from the "other" images
+    const [primaryImage, ...otherImages] = hotel_images;
+
+    // 6. Upload the primary image for the main database record
+    const uploadPrimaryImage: UploadFileResult | undefined =
+      await uploadMediaMethod(primaryImage, "hotel-rooms/primary", {
         price: price.toString(),
         description: description || "",
-        room_type: room_type! || "",
-        room_number: room_number! || "",
+        room_type: room_type,
         position: position || "",
       });
 
-    if (!uploadHotelImage?.secure_url || !uploadHotelImage?.optimized_url) {
-      return c.json({ error: "Failed to upload hotel image" }, 500);
+    if (!uploadPrimaryImage?.secure_url || !uploadPrimaryImage?.optimized_url) {
+      return c.json({ error: "Failed to upload primary hotel image" }, 500);
     }
 
+    // 7. Create the main room record in the database
     const newRoom = await db
       .insert(adminHotelRoomReservation)
       .values({
-        roomNumber: room_number,
-        typeOfRoom: room_type!,
-        floor: floor,
+        typeOfRoom: room_type,
         occupancy: occupancy,
         price: price,
-        occupied: occupied,
-        roomImage: uploadHotelImage.optimized_url,
+        roomImage: uploadPrimaryImage.optimized_url,
+        totalRooms: total_rooms?.toString() ?? "", // Use nullish coalescing for safety
       })
       .returning();
+
+    let otherImageUrls: string[] = [];
+    if (otherImages.length > 0) {
+      console.log(`Uploading ${otherImages.length} additional images...`);
+      const uploadResults = await uploadMediaMethod(
+        otherImages,
+        "hotel-rooms/gallery",
+      );
+      console.log(uploadResults);
+    }
 
     return c.json(
       {

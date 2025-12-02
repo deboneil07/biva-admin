@@ -136,6 +136,37 @@ export class CloudinaryService {
     }
   }
 
+  async uploadMultipleMedia(
+    sources: (File | Buffer | ArrayBuffer | Uint8Array | string)[],
+    options: UploadOptions = {},
+  ) {
+    const {
+      folder,
+      public_id,
+      tags,
+      allowedMimeTypes,
+      context,
+      forceResourceType,
+      maxSizeBytes,
+    } = options;
+
+    if (!sources || sources.length === 0) {
+      throw new Error("No sources provided");
+    }
+
+    try {
+      const uploadPromises = sources.map((source) =>
+        this.uploadMedia(source, options),
+      );
+
+      const results = await Promise.all(uploadPromises);
+      return results;
+    } catch (error: any) {
+      console.error("media upload or multiple media upload failed!", error);
+      throw new Error(`Batch uploading failed: ${error.message}`);
+    }
+  }
+
   async uploadMedia(
     source: File | Buffer | ArrayBuffer | Uint8Array | string,
     options: UploadOptions = {},

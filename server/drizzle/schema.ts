@@ -25,7 +25,6 @@ export const hotelRoomReservation = pgTable(
     applicationId: text("application_id")
       .default(`gen_random_uuid()`)
       .notNull(),
-    roomNumber: text("room_number").array().default([""]),
     name: text().notNull(),
     email: text().notNull(),
     aadharOrPanImgUrl: text("aadhar_or_pan_img_url").notNull(),
@@ -37,12 +36,14 @@ export const hotelRoomReservation = pgTable(
     createdAt: timestamp("created_at", { mode: "string" })
       .defaultNow()
       .notNull(),
+    joinDate: text("join_date").notNull(),
+    leaveDate: text("leave_date").notNull(),
+    roomType: text("room_type").notNull(),
   },
   (table) => [
     unique("hotelRoomReservation_application_id_unique").on(
       table.applicationId,
     ),
-    unique("hotelRoomReservation_room_number_unique").on(table.roomNumber),
     unique("hotelRoomReservation_email_unique").on(table.email),
     unique("hotelRoomReservation_phone_number_unique").on(table.phoneNumber),
   ],
@@ -52,31 +53,27 @@ export const adminHotelRoomReservation = pgTable(
   "adminHotelRoomReservation",
   {
     roomId: serial("room_id").primaryKey().notNull(),
-    roomNumber: text("room_number").notNull(),
     typeOfRoom: text("type_of_room").notNull(),
-    floor: integer().notNull(),
     occupancy: integer().notNull(),
     price: integer().notNull(),
-    occupied: boolean().default(false).notNull(),
     roomImage: text("room-image").notNull(),
+    totalRooms: text("total_rooms").default("1").notNull(),
   },
   (table) => [
-    unique("adminHotelRoomReservation_room_number_unique").on(table.roomNumber),
+    unique("adminHotelRoomReservation_type_of_room_key").on(table.typeOfRoom),
   ],
 );
 
 export const adminEventTable = pgTable(
   "adminEventTable",
   {
-    id: integer()
-      .primaryKey()
-      .generatedAlwaysAsIdentity({
-        name: "adminFoodCourtTable_id_seq",
-        startWith: 1,
-        increment: 1,
-        minValue: 1,
-        maxValue: 2147483647,
-      }),
+    id: integer().primaryKey().generatedAlwaysAsIdentity({
+      name: "adminFoodCourtTable_id_seq",
+      startWith: 1,
+      increment: 1,
+      minValue: 1,
+      maxValue: 2147483647,
+    }),
     eventId: text("event_id").notNull(),
     eventName: text("event_name").notNull(),
     groupName: text("group_name").notNull(),
@@ -120,7 +117,6 @@ export const foodCourtEventTable = pgTable(
     aadharOrPanImgUrl: text("aadhar_or_pan_img_url").notNull(),
     phoneNumber: text("phone_number").notNull(),
     totalPeople: integer("total_people").default(1).notNull(),
-    tableId: text("table_id").array().default([""]),
     eventId: text("event_id").notNull(),
     status: text().default("available").notNull(),
     paid: boolean().default(false).notNull(),
