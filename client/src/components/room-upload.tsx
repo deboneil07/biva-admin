@@ -297,7 +297,7 @@ export function RoomUpload({
 
             // Add ALL files to the same FormData with array-like naming
             selectedFiles.forEach((file) => {
-                formData.append(`files`, file); // This creates an array of files
+                formData.append(`file`, file); // This creates an array of files
                 // OR alternatively:
                 // formData.append(`files[${index}]`, file);
             });

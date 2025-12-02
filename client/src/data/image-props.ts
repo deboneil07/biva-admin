@@ -99,16 +99,8 @@ export const PROPS = {
             value: null,
         },
         {
-            key: "floor",
-            value: null,
-        },
-        {
             key: "occupancy",
             value: null,
-        },
-        {
-            key: "occupied",
-            value: ["true", "false"],
         },
     ],
 };
