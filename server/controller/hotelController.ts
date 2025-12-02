@@ -14,6 +14,9 @@ hotelRouter.post("/create", async (c: Context) => {
   try {
     // 1. Correctly parse the body as FormData
     const body = await c.req.parseBody();
+    console.log("=== Incoming Request Body ===");
+    console.log(JSON.stringify(body, null, 2));
+    console.log("===========================");
 
     // 2. Safely extract and type-cast string fields
     const room_type =
@@ -59,7 +62,7 @@ hotelRouter.post("/create", async (c: Context) => {
 
     // 6. Upload the primary image for the main database record
     const uploadPrimaryImage: UploadFileResult | undefined =
-      await uploadMediaMethod(primaryImage, "hotel-rooms/primary", {
+      await uploadMediaMethod(primaryImage, "rooms", {
         price: price.toString(),
         description: description || "",
         room_type: room_type,
@@ -85,10 +88,12 @@ hotelRouter.post("/create", async (c: Context) => {
     let otherImageUrls: string[] = [];
     if (otherImages.length > 0) {
       console.log(`Uploading ${otherImages.length} additional images...`);
-      const uploadResults = await uploadMediaMethod(
-        otherImages,
-        "hotel-rooms/gallery",
-      );
+      const uploadResults = await uploadMediaMethod(otherImages, "rooms", {
+        price: price.toString(),
+        description: description || "",
+        room_type: room_type,
+        position: position || "",
+      });
       console.log(uploadResults);
     }
 
