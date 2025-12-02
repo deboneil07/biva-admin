@@ -12,6 +12,15 @@
  *   room_id: "R001"
  * }
  */
+// Add these imports
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from "@/components/ui/sheet";
 
 import * as React from "react";
 
@@ -86,12 +95,12 @@ const createColumns = (
     {
         id: "select",
         header: () => {
-            const { id: selectedIds, updateStore } = useRoomStore.getState();
+            const { selectedRoomTypes, updateStore } = useRoomStore.getState();
             const allRoomNumbers = allRoomData.map(
                 (room) => room.room_number || room.public_id,
             );
             const isAllSelected =
-                selectedIds.length === allRoomNumbers.length &&
+                selectedRoomTypes.length === allRoomNumbers.length &&
                 allRoomNumbers.length > 0;
 
             return (
@@ -101,24 +110,26 @@ const createColumns = (
                         onCheckedChange={(value) => {
                             if (value) {
                                 updateStore({
-                                    id: allRoomNumbers,
+                                    selectedRoomTypes: allRoomNumbers,
                                     count: allRoomNumbers.length,
                                 });
                             } else {
-                                updateStore({ id: [], count: 0 });
+                                updateStore({
+                                    selectedRoomTypes: [],
+                                    count: 0,
+                                });
                             }
                         }}
-                        aria-label="Select all"
-                        className="translate-y-[2px]"
                     />
                 </div>
             );
         },
         cell: ({ row }) => {
-            const { id: selectedIds, updateStore } = useRoomStore();
+            const { selectedRoomTypes, updateStore } = useRoomStore.getState();
             const roomNumber =
-                row.original.room_number || row.original.public_id;
-            const isSelected = selectedIds.includes(roomNumber);
+                (row.getValue("room_number") as string) ||
+                (row.getValue("public_id") as string);
+            const isSelected = selectedRoomTypes.includes(roomNumber);
 
             return (
                 <div className="flex items-center justify-center">
@@ -126,25 +137,24 @@ const createColumns = (
                         checked={isSelected}
                         onCheckedChange={(value) => {
                             if (value) {
-                                // Add to selection
-                                const newIds = [...selectedIds, roomNumber];
+                                const newIds = [
+                                    ...selectedRoomTypes,
+                                    roomNumber,
+                                ];
                                 updateStore({
-                                    id: newIds,
+                                    selectedRoomTypes: newIds,
                                     count: newIds.length,
                                 });
                             } else {
-                                // Remove from selection
-                                const newIds = selectedIds.filter(
+                                const newIds = selectedRoomTypes.filter(
                                     (id) => id !== roomNumber,
                                 );
                                 updateStore({
-                                    id: newIds,
+                                    selectedRoomTypes: newIds,
                                     count: newIds.length,
                                 });
                             }
                         }}
-                        aria-label="Select row"
-                        className="translate-y-[2px]"
                     />
                 </div>
             );
@@ -243,6 +253,8 @@ import { useRoomStore } from "@/store/room-store";
 
 import { Badge } from "@/components/ui/badge";
 
+// Remove the old createColumns function completely and update the component
+
 export function HotelRooms({
     data: initialData,
     isLoading,
@@ -259,7 +271,7 @@ export function HotelRooms({
     );
     const [isDeleting, setIsDeleting] = React.useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
-    const { selectedRoomTypes, count, updateStore } = useRoomStore(); // Updated destructuring
+    const { selectedRoomTypes, count, updateStore } = useRoomStore(); // Correct destructuring
 
     // Update data when initialData changes
     React.useEffect(() => {
@@ -268,7 +280,7 @@ export function HotelRooms({
         } else if (initialData) {
             setData(initialData);
         }
-        updateStore({ selectedRoomTypes: [], count: 0 }); // Updated reset
+        updateStore({ selectedRoomTypes: [], count: 0 }); // Use correct property names
     }, [initialData, updateStore]);
 
     // Show error toast when error occurs
@@ -312,7 +324,7 @@ export function HotelRooms({
         return Object.values(groups);
     }, [data]);
 
-    // Delete function - now deletes all rooms of selected types
+    // Delete function - sends room types
     const handleDelete = async () => {
         if (selectedRoomTypes.length === 0) {
             toast.error("No room types selected");
@@ -322,22 +334,14 @@ export function HotelRooms({
         setIsDeleting(true);
 
         try {
-            // Get all room IDs for the selected room types
-            const roomIdsToDelete = data
-                .filter((room: any) =>
-                    selectedRoomTypes.includes(room.room_type),
-                )
-                .map((room: any) => room.public_id);
-
-            console.log("Deleting rooms of types:", selectedRoomTypes);
-            console.log("Room IDs to delete:", roomIdsToDelete);
+            console.log("Deleting room types:", selectedRoomTypes);
 
             const loadingToast = toast.loading(
-                `Deleting ${selectedRoomTypes.length} room type(s) (${roomIdsToDelete.length} rooms)...`,
+                `Deleting ${selectedRoomTypes.length} room type(s)...`,
             );
 
             const response = await instance.delete("/room/delete", {
-                data: { room_numbers: roomIdsToDelete },
+                data: { room_types: selectedRoomTypes },
             });
 
             toast.dismiss(loadingToast);
@@ -345,7 +349,7 @@ export function HotelRooms({
             if (response.status === 200) {
                 setData((prevData: any[]) =>
                     prevData.filter(
-                        (item) => !roomIdsToDelete.includes(item.public_id),
+                        (item) => !selectedRoomTypes.includes(item.room_type),
                     ),
                 );
 
@@ -363,7 +367,7 @@ export function HotelRooms({
                 );
             }
         } catch (error: any) {
-            console.error("Error deleting rooms:", error);
+            console.error("Error deleting room types:", error);
             toast.error(
                 error.response?.data?.message ||
                     error.message ||
@@ -375,7 +379,7 @@ export function HotelRooms({
         }
     };
 
-    // Create columns for grouped data
+    // Create columns for grouped data (this is the one we actually use)
     const groupedColumns: ColumnDef<any>[] = [
         {
             id: "select",
@@ -418,7 +422,6 @@ export function HotelRooms({
                             checked={isSelected}
                             onCheckedChange={(value) => {
                                 if (value) {
-                                    // Add this room type to selection
                                     const newSelected = [
                                         ...selectedRoomTypes,
                                         group.room_type,
@@ -428,7 +431,6 @@ export function HotelRooms({
                                         count: newSelected.length,
                                     });
                                 } else {
-                                    // Remove this room type from selection
                                     const newSelected =
                                         selectedRoomTypes.filter(
                                             (type) => type !== group.room_type,
@@ -497,7 +499,9 @@ export function HotelRooms({
             accessorKey: "price",
             header: "Price",
             cell: ({ row }) => (
-                <div className="font-medium">₹{row.getValue("price")}</div>
+                <div className="font-medium text-green-600">
+                    ₹{row.getValue("price")}
+                </div>
             ),
         },
         {
@@ -510,107 +514,335 @@ export function HotelRooms({
 
                 return (
                     <div className="flex items-center gap-2">
-                        <Dialog>
-                            <DialogTrigger asChild>
+                        <Sheet>
+                            <SheetTrigger asChild>
                                 <Button variant="outline" size="sm">
                                     <Eye className="h-4 w-4" />
                                 </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                                <DialogHeader>
-                                    <DialogTitle>
-                                        {group.room_type} - Individual Rooms
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                        View all {group.total_rooms} rooms of
-                                        this type
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                    {/* Room type info */}
-                                    <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                            </SheetTrigger>
+                            <SheetContent
+                                side="right"
+                                className="w-full sm:w-[540px] sm:max-w-none"
+                            >
+                                <SheetHeader>
+                                    <SheetTitle>{group.room_type}</SheetTitle>
+                                    <SheetDescription>
+                                        Room details and management for{" "}
+                                        {group.room_type}
+                                    </SheetDescription>
+                                </SheetHeader>
+
+                                <div className="mt-6 space-y-6">
+                                    {/* Room Type Summary */}
+                                    <div className="rounded-lg border p-4 space-y-3">
+                                        <h3 className="font-semibold text-lg">
+                                            Room Type Overview
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span className="text-muted-foreground">
+                                                    Type:
+                                                </span>
+                                                <p className="font-medium">
+                                                    {group.room_type}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <span className="text-muted-foreground">
+                                                    Total Rooms:
+                                                </span>
+                                                <p className="font-medium">
+                                                    {group.total_rooms}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <span className="text-muted-foreground">
+                                                    Price per night:
+                                                </span>
+                                                <p className="font-medium text-green-600">
+                                                    ₹{group.price}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <span className="text-muted-foreground">
+                                                    Status:
+                                                </span>
+                                                <Badge
+                                                    variant={
+                                                        selectedRoomTypes.includes(
+                                                            group.room_type,
+                                                        )
+                                                            ? "destructive"
+                                                            : "secondary"
+                                                    }
+                                                >
+                                                    {selectedRoomTypes.includes(
+                                                        group.room_type,
+                                                    )
+                                                        ? "Selected"
+                                                        : "Available"}
+                                                </Badge>
+                                            </div>
+                                        </div>
+
                                         <div>
-                                            <h3 className="font-semibold">
-                                                {group.room_type}
-                                            </h3>
-                                            <p className="text-sm text-muted-foreground">
-                                                {group.total_rooms} rooms • ₹
-                                                {group.price} per night
+                                            <span className="text-muted-foreground text-sm">
+                                                Description:
+                                            </span>
+                                            <p className="text-sm mt-1">
+                                                {group.description}
                                             </p>
                                         </div>
-                                        <Badge
-                                            variant={
-                                                selectedRoomTypes.includes(
+                                    </div>
+
+                                    {/* Image Gallery */}
+                                    <div className="space-y-3">
+                                        <h3 className="font-semibold">
+                                            Images ({group.images.length})
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {group.images.map(
+                                                (
+                                                    image: string,
+                                                    index: number,
+                                                ) => (
+                                                    <div
+                                                        key={index}
+                                                        className="relative group"
+                                                    >
+                                                        <img
+                                                            src={image}
+                                                            alt={`${group.room_type} ${index + 1}`}
+                                                            className="w-full h-32 object-cover rounded-lg border"
+                                                        />
+                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
+                                                        <div className="absolute bottom-2 left-2">
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="text-xs"
+                                                            >
+                                                                {index + 1}
+                                                            </Badge>
+                                                        </div>
+                                                    </div>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Individual Rooms Details */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="font-semibold">
+                                                Individual Rooms
+                                            </h3>
+                                            <Badge variant="outline">
+                                                {group.rooms.length} rooms
+                                            </Badge>
+                                        </div>
+
+                                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                                            {group.rooms.map(
+                                                (room: any, index: number) => (
+                                                    <div
+                                                        key={room.public_id}
+                                                        className="border rounded-lg p-4 space-y-3"
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-3">
+                                                                <img
+                                                                    src={
+                                                                        room.url
+                                                                    }
+                                                                    alt={`Room ${index + 1}`}
+                                                                    className="h-12 w-12 rounded object-cover border"
+                                                                />
+                                                                <div>
+                                                                    <p className="font-medium text-sm">
+                                                                        Room #
+                                                                        {room.room_number ||
+                                                                            `${index + 1}`}
+                                                                    </p>
+                                                                    <p className="text-xs text-muted-foreground font-mono">
+                                                                        ID:{" "}
+                                                                        {room.public_id.slice(
+                                                                            0,
+                                                                            8,
+                                                                        )}
+                                                                        ...
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="text-xs"
+                                                            >
+                                                                Room {index + 1}
+                                                            </Badge>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-2 gap-3 text-xs">
+                                                            <div>
+                                                                <span className="text-muted-foreground">
+                                                                    Price:
+                                                                </span>
+                                                                <p className="font-medium text-green-600">
+                                                                    ₹
+                                                                    {room.price}
+                                                                </p>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-muted-foreground">
+                                                                    Type:
+                                                                </span>
+                                                                <p className="font-medium">
+                                                                    {
+                                                                        room.room_type
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        {room.desc && (
+                                                            <div className="text-xs">
+                                                                <span className="text-muted-foreground">
+                                                                    Description:
+                                                                </span>
+                                                                <p className="mt-1 text-sm">
+                                                                    {room.desc}
+                                                                </p>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Room specific actions */}
+                                                        <div className="flex gap-2 pt-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="text-xs h-7"
+                                                                onClick={() =>
+                                                                    window.open(
+                                                                        room.url,
+                                                                        "_blank",
+                                                                    )
+                                                                }
+                                                            >
+                                                                View Image
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="text-xs h-7 text-muted-foreground"
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(
+                                                                        room.public_id,
+                                                                    );
+                                                                    toast.success(
+                                                                        "Room ID copied",
+                                                                    );
+                                                                }}
+                                                            >
+                                                                Copy ID
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Quick Actions */}
+                                    <div className="border-t pt-4 space-y-3">
+                                        <h3 className="font-semibold">
+                                            Quick Actions
+                                        </h3>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="flex-1"
+                                                onClick={() => {
+                                                    const isSelected =
+                                                        selectedRoomTypes.includes(
+                                                            group.room_type,
+                                                        );
+                                                    if (isSelected) {
+                                                        const newSelected =
+                                                            selectedRoomTypes.filter(
+                                                                (type) =>
+                                                                    type !==
+                                                                    group.room_type,
+                                                            );
+                                                        updateStore({
+                                                            selectedRoomTypes:
+                                                                newSelected,
+                                                            count: newSelected.length,
+                                                        });
+                                                        toast.success(
+                                                            `${group.room_type} deselected`,
+                                                        );
+                                                    } else {
+                                                        const newSelected = [
+                                                            ...selectedRoomTypes,
+                                                            group.room_type,
+                                                        ];
+                                                        updateStore({
+                                                            selectedRoomTypes:
+                                                                newSelected,
+                                                            count: newSelected.length,
+                                                        });
+                                                        toast.success(
+                                                            `${group.room_type} selected`,
+                                                        );
+                                                    }
+                                                }}
+                                            >
+                                                {selectedRoomTypes.includes(
                                                     group.room_type,
                                                 )
-                                                    ? "destructive"
-                                                    : "outline"
-                                            }
-                                        >
-                                            {selectedRoomTypes.includes(
-                                                group.room_type,
-                                            )
-                                                ? "Selected for deletion"
-                                                : "Available"}
-                                        </Badge>
+                                                    ? "Deselect Type"
+                                                    : "Select Type"}
+                                            </Button>
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => {
+                                                    const roomData = {
+                                                        room_type:
+                                                            group.room_type,
+                                                        total_rooms:
+                                                            group.total_rooms,
+                                                        price: group.price,
+                                                        description:
+                                                            group.description,
+                                                        rooms: group.rooms.map(
+                                                            (r) => ({
+                                                                id: r.public_id,
+                                                                room_number:
+                                                                    r.room_number,
+                                                                image: r.url,
+                                                            }),
+                                                        ),
+                                                    };
+                                                    navigator.clipboard.writeText(
+                                                        JSON.stringify(
+                                                            roomData,
+                                                            null,
+                                                            2,
+                                                        ),
+                                                    );
+                                                    toast.success(
+                                                        "Room data copied to clipboard",
+                                                    );
+                                                }}
+                                            >
+                                                Export Data
+                                            </Button>
+                                        </div>
                                     </div>
-
-                                    {/* Image gallery */}
-                                    <div className="grid grid-cols-4 gap-2">
-                                        {group.images.map(
-                                            (image: string, index: number) => (
-                                                <img
-                                                    key={index}
-                                                    src={image}
-                                                    alt={`${group.room_type} ${index + 1}`}
-                                                    className="h-20 w-full object-cover rounded border"
-                                                />
-                                            ),
-                                        )}
-                                    </div>
-
-                                    {/* Individual rooms table */}
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Room ID</TableHead>
-                                                <TableHead>Image</TableHead>
-                                                <TableHead>
-                                                    Description
-                                                </TableHead>
-                                                <TableHead>Price</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {group.rooms.map((room: any) => (
-                                                <TableRow key={room.public_id}>
-                                                    <TableCell className="font-mono text-sm">
-                                                        {room.room_number ||
-                                                            room.public_id.slice(
-                                                                0,
-                                                                8,
-                                                            )}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <img
-                                                            src={room.url}
-                                                            alt="Room"
-                                                            className="h-10 w-10 rounded object-cover border"
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell className="max-w-xs truncate">
-                                                        {room.desc}
-                                                    </TableCell>
-                                                    <TableCell className="">
-                                                        ₹{room.price}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
                                 </div>
-                            </DialogContent>
-                        </Dialog>
+                            </SheetContent>
+                        </Sheet>
                     </div>
                 );
             },
@@ -639,6 +871,7 @@ export function HotelRooms({
                         <div className="flex items-center gap-2">
                             <span className="text-sm text-muted-foreground">
                                 {count} room type{count > 1 ? "s" : ""} selected
+                                ({selectedRoomTypes.join(", ")})
                             </span>
                             <Dialog
                                 open={showDeleteDialog}
@@ -664,9 +897,12 @@ export function HotelRooms({
                                         <DialogDescription>
                                             Are you sure you want to delete all
                                             rooms of the selected types:{" "}
-                                            {selectedRoomTypes.join(", ")}? This
-                                            will delete all individual rooms of
-                                            these types and cannot be undone.
+                                            <strong>
+                                                {selectedRoomTypes.join(", ")}
+                                            </strong>
+                                            ? This will delete all individual
+                                            rooms of these types and cannot be
+                                            undone.
                                         </DialogDescription>
                                     </DialogHeader>
                                     <DialogFooter>
