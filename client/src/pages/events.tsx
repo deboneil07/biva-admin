@@ -1,4 +1,4 @@
-import { Events, sampleEvents } from "@/components/events";
+import { Events } from "@/components/events";
 import { EventOrRoomUpload } from "@/components/event-uplaod";
 import { useMediaData } from "@/hooks/useMediaData";
 import { useMemo } from "react";
@@ -42,7 +42,7 @@ export default function EventsPage() {
                 <EventOrRoomUpload prop="events" />
                 <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
                     <Events
-                        data={events || sampleEvents}
+                        data={events}
                         isLoading={isLoading}
                         error={error}
                         onDeleteSuccess={refetch}

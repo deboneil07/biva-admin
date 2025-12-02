@@ -1,114 +1,114 @@
 export const PROPS = {
-    "hero": [
+    hero: [
         {
             key: "position",
-            value: "hero"
-        }
+            value: "hero",
+        },
     ],
-    "gallery": [
+    gallery: [
         {
             key: "position",
-            value: "gallery"
-        }
+            value: "gallery",
+        },
     ],
-    "banquet": [
+    banquet: [
         {
             key: "position",
-            value: "banquet"
-        }
+            value: "banquet",
+        },
     ],
-    "preference": [
+    preference: [
         {
             key: "position",
-            value: "preference"
+            value: "preference",
         },
         {
             key: "name",
-            value: ["veg", "non-veg"]
-        }
+            value: ["veg", "non-veg"],
+        },
     ],
-    "category": [
+    category: [
         {
             key: "position",
-            value: "category"
+            value: "category",
         },
         {
             key: "name",
-            value: null
-        }
+            value: null,
+        },
     ],
-    "items": [
+    items: [
         {
             key: "position",
-            value: "items"
+            value: "items",
         },
         {
             key: "name",
-            value: null
+            value: null,
         },
         {
             key: "description",
-            value: null
-        }
+            value: null,
+        },
     ],
-    "events": [
+    events: [
         {
             key: "position",
             value: "events",
         },
         {
             key: "name",
-            value: null
+            value: null,
         },
         {
             key: "price",
-            value: null
+            value: null,
         },
         {
             key: "group_name",
-            value: null
+            value: null,
         },
         {
             key: "date",
-            value: null
+            value: null,
         },
         {
             key: "time",
-            value: null
-        }
+            value: null,
+        },
     ],
-    "rooms": [
+    rooms: [
         {
             key: "position",
             value: "rooms",
         },
         {
-            key: "room_number",
-            value: null,
-        },  
-        {
             key: "room_type",
-            value: []
+            value: [],
+        },
+        {
+            key: "total_rooms",
+            value: null,
         },
         {
             key: "description",
-            value: null
+            value: null,
         },
         {
             key: "price",
-            value: null
+            value: null,
         },
         {
             key: "floor",
-            value: null
+            value: null,
         },
         {
             key: "occupancy",
-            value: null
+            value: null,
         },
         {
             key: "occupied",
-            value: ["true", "false"]
-        }
-    ]
-}
+            value: ["true", "false"],
+        },
+    ],
+};

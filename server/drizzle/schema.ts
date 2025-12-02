@@ -23,7 +23,7 @@ export const hotelRoomReservation = pgTable(
   {
     id: serial().primaryKey().notNull(),
     applicationId: text("application_id")
-      .default(sql`gen_random_uuid()`)
+      .default(`gen_random_uuid()`)
       .notNull(),
     roomNumber: text("room_number").array().default([""]),
     name: text().notNull(),
@@ -84,7 +84,6 @@ export const adminEventTable = pgTable(
     date: text().notNull(),
     time: text().notNull(),
     banner: text().notNull(),
-    venueImageUrl: text("venue_image_url").notNull(),
   },
   (table) => [unique("adminFoodCourtTable_table_name_key").on(table.eventId)],
 );
