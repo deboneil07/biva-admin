@@ -1,11 +1,7 @@
 import { Hono, type Context } from "hono";
 import { db } from "../db";
 import type { UploadFileResult } from "../utils/cloudinary-service";
-import {
-  deleteMediaFunction,
-  uploadMediaMethod,
-  uploadMultipleMedia,
-} from "./imageController";
+import { uploadMediaMethod, uploadMultipleMedia } from "./imageController";
 import { adminHotelRoomReservation } from "../drizzle/schema";
 import { eq, inArray } from "drizzle-orm";
 import { convertUrlsToPublicId } from "../utils/getPublicIdFromUrl";
@@ -135,54 +131,88 @@ hotelRouter.delete("/delete", async (c: Context) => {
   try {
     const body = await c.req.json();
 
-    const room_numbers: string[] = body["room_numbers"];
-    if (
-      !room_numbers ||
-      !Array.isArray(room_numbers) ||
-      room_numbers.length === 0
-    ) {
+    // 1. Get the room_type from the body
+    const room_type: string = body["room_type"];
+
+    if (!room_type || typeof room_type !== "string") {
       return c.json(
-        { error: "Invalid or empty array of event IDs provided." },
+        { error: "Invalid or missing 'room_type' in request body." },
         400,
       );
     }
+
+    // Initialize an instance of your Cloudinary service
+    const cloudinaryService = new CloudinaryService();
+
+    // 2. Find all images in Cloudinary with the matching context
+    console.log(
+      `Searching for images in Cloudinary with room_type: ${room_type}`,
+    );
+    const imagesToDelete = await cloudinaryService.listByMetadata(
+      "room_type", // The metadata key
+      room_type, // The metadata value
+      "hotel-rooms", // The folder to search within
+    );
+
+    if (imagesToDelete.length === 0) {
+      console.log(`No images found in Cloudinary for room_type: ${room_type}`);
+    } else {
+      console.log(
+        `Found ${imagesToDelete.length} images to delete from Cloudinary.`,
+      );
+    }
+
+    // 3. Delete the images from Cloudinary
+    const publicIdsToDelete = imagesToDelete.map((img) => img.public_id);
+    let cloudinaryDeleteResult;
+    if (publicIdsToDelete.length > 0) {
+      cloudinaryDeleteResult =
+        await cloudinaryService.deleteImageVideo(publicIdsToDelete);
+      console.log("Cloudinary deletion result:", cloudinaryDeleteResult);
+    }
+
+    // 4. Delete the room records from the database
+    console.log(
+      `Deleting room records from database with typeOfRoom: ${room_type}`,
+    );
     const deletedRooms = await db
       .delete(adminHotelRoomReservation)
-      .where(inArray(adminHotelRoomReservation.roomNumber, room_numbers))
+      .where(eq(adminHotelRoomReservation.typeOfRoom, room_type))
       .returning({
+        // Return the room numbers of the deleted records
         room_number: adminHotelRoomReservation.roomNumber,
-        room_image: adminHotelRoomReservation.roomImage,
       });
 
     if (deletedRooms.length === 0) {
       return c.json(
-        { error: "No hotel rooms found with the provided room numbers." },
+        {
+          error: `No hotel rooms found in the database with room_type: ${room_type}`,
+        },
         404,
       );
     }
 
-    const publicIdPromises = deletedRooms.map((room) => {
-      return convertUrlsToPublicId(room.room_image);
-    });
-
-    const resolvedPublicIds = await Promise.all(publicIdPromises);
-    const imagesToDelete: string[] = resolvedPublicIds.filter(
-      (id): id is string => id !== null && id !== undefined,
-    );
-
-    const deletedRoomImages = await deleteMediaFunction(imagesToDelete);
+    // 5. Return a success response with details
     return c.json(
       {
         success: true,
-        message: `${deletedRooms.length} hotel rooms deleted successfully`,
-        deleted_count: deletedRooms.length,
-        deleted_rooms: deletedRooms.map((room) => room.room_number),
-        deleted_img: deletedRoomImages,
+        message: `Successfully deleted all rooms and associated images for room_type: ${room_type}`,
+        details: {
+          deleted_db_records_count: deletedRooms.length,
+          deleted_room_numbers: deletedRooms.map((r) => r.room_number),
+          deleted_cloudinary_images_count: publicIdsToDelete.length,
+          cloudinary_deletion_status: cloudinaryDeleteResult
+            ? "Success"
+            : "No images to delete",
+        },
       },
       200,
     );
   } catch (err: any) {
-    console.error(err);
-    return c.json({ error: "Internal server error" }, 500);
+    console.error("Error during room deletion:", err);
+    return c.json(
+      { error: "Internal server error", details: err.message },
+      500,
+    );
   }
 });
