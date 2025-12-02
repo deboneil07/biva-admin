@@ -130,6 +130,7 @@ hotelRouter.post("/create", async (c: Context) => {
 hotelRouter.delete("/delete", async (c: Context) => {
   try {
     const body = await c.req.json();
+    console.log("DELETE GOT THIS BODY", body);
 
     // 1. Get the room_type from the body
     const room_type: string = body["room_type"];
