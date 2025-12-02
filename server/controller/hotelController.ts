@@ -5,6 +5,7 @@ import { uploadMediaMethod, uploadMultipleMedia } from "./imageController";
 import { adminHotelRoomReservation } from "../drizzle/schema";
 import { eq, inArray } from "drizzle-orm";
 import { convertUrlsToPublicId } from "../utils/getPublicIdFromUrl";
+import { CloudinaryService } from "../utils/cloudinary-service";
 
 export const hotelRouter = new Hono();
 
@@ -133,7 +134,7 @@ hotelRouter.delete("/delete", async (c: Context) => {
     console.log("DELETE GOT THIS BODY", body);
 
     // 1. Get the room_type from the body
-    const room_type: string[] = body["room_type"];
+    const room_types: string[] = body["room_types"];
 
     if (!room_types || !Array.isArray(room_types) || room_types.length === 0) {
       return c.json(
@@ -161,7 +162,6 @@ hotelRouter.delete("/delete", async (c: Context) => {
       .delete(adminHotelRoomReservation)
       .where(inArray(adminHotelRoomReservation.typeOfRoom, room_types))
       .returning({
-        room_number: adminHotelRoomReservation.roomNumber,
         typeOfRoom: adminHotelRoomReservation.typeOfRoom,
       });
 
@@ -182,7 +182,6 @@ hotelRouter.delete("/delete", async (c: Context) => {
         details: {
           deleted_db_records_count: deletedRooms.length,
           deleted_room_info: deletedRooms.map((r) => ({
-            number: r.room_number,
             type: r.typeOfRoom,
           })),
           deleted_cloudinary_images_count: imageDeletionResult.foundImagesCount,
