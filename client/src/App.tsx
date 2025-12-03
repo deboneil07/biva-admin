@@ -8,6 +8,7 @@ import { Toaster } from "./components/ui/sonner";
 import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import Team from "./pages/team";
+import TicketsPage from "./pages/ticket-page";
 import DashboardLayout from "./layout/dashboardLayout";
 
 import FoodCourtBookingsPage from "./pages/food-court-booking";
@@ -76,6 +77,16 @@ function App() {
                                 <AdminOnlyRoute>
                                     <Team />
                                 </AdminOnlyRoute>
+                            }
+                        />
+
+                        {/* Tickets - accessible to admin and employee */}
+                        <Route
+                            path="/tickets"
+                            element={
+                                <EmployeeRoute>
+                                    <TicketsPage />
+                                </EmployeeRoute>
                             }
                         />
 

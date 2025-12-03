@@ -67,13 +67,15 @@ export const adminHotelRoomReservation = pgTable(
 export const adminEventTable = pgTable(
   "adminEventTable",
   {
-    id: integer().primaryKey().generatedAlwaysAsIdentity({
-      name: "adminFoodCourtTable_id_seq",
-      startWith: 1,
-      increment: 1,
-      minValue: 1,
-      maxValue: 2147483647,
-    }),
+    id: integer()
+      .primaryKey()
+      .generatedAlwaysAsIdentity({
+        name: "adminFoodCourtTable_id_seq",
+        startWith: 1,
+        increment: 1,
+        minValue: 1,
+        maxValue: 2147483647,
+      }),
     eventId: text("event_id").notNull(),
     eventName: text("event_name").notNull(),
     groupName: text("group_name").notNull(),
@@ -219,3 +221,22 @@ export const session = pgTable(
     unique("session_token_unique").on(table.token),
   ],
 );
+
+export const ticket = pgTable("ticket", {
+  id: integer()
+    .primaryKey()
+    .generatedAlwaysAsIdentity({
+      name: "ticket_id_seq",
+      startWith: 1,
+      increment: 1,
+      minValue: 1,
+      maxValue: 2147483647,
+      cache: 1,
+    }),
+  name: text().notNull(),
+  email: text().notNull(),
+  phone: text().notNull(),
+  category: text().notNull(),
+  subject: text().notNull(),
+  description: text().notNull(),
+});

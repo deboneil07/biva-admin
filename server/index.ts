@@ -12,6 +12,7 @@ import {
   uploadImageVideoController,
 } from "./controller/imageController";
 import { hotelRouter } from "./controller/hotelController";
+import getTickets from "./utils/get-tickets";
 
 const app = new Hono();
 app.use(
@@ -32,6 +33,8 @@ app.post("/upload-media", uploadImageVideoController);
 app.post("/delete-media", deleteMediaController);
 app.route("/event", eventRouter);
 app.route("/room", hotelRouter);
+
+app.get("/ticket", getTickets);
 
 serve({
   fetch: app.fetch,

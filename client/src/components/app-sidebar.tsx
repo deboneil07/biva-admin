@@ -5,6 +5,7 @@ import {
     IconFolder,
     IconInnerShadowTop,
     IconUsers,
+    IconTicket,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -36,6 +37,11 @@ const getNavItems = (role: string) => {
                 title: "Team",
                 url: "/team",
                 icon: IconUsers,
+            },
+            {
+                title: "Tickets",
+                url: "/tickets",
+                icon: IconTicket,
             },
             {
                 title: "Gallery",
@@ -108,6 +114,11 @@ const getNavItems = (role: string) => {
     if (role === "employee") {
         return [
             ...baseItems,
+            {
+                title: "Tickets",
+                url: "/tickets",
+                icon: IconTicket,
+            },
             {
                 title: "Hotel",
                 url: "#",
