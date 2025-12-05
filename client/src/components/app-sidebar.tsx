@@ -20,6 +20,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Megaphone, Speaker } from "lucide-react";
 
 const getNavItems = (role: string) => {
     const baseItems = [
@@ -47,6 +48,11 @@ const getNavItems = (role: string) => {
                 title: "Gallery",
                 url: "/gallery",
                 icon: IconFolder,
+            },
+            {
+                title: "Announcements",
+                url: "/announcements",
+                icon: Megaphone,
             },
             {
                 title: "Hotel",

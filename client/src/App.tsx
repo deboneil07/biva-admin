@@ -29,6 +29,7 @@ import {
     EmployeeRoute,
     MediaHandlerRoute,
 } from "./components/ProtectedRoute";
+import AnnouncementsPage from "./pages/announcements";
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -76,6 +77,15 @@ function App() {
                             element={
                                 <AdminOnlyRoute>
                                     <Team />
+                                </AdminOnlyRoute>
+                            }
+                        />
+
+                        <Route
+                            path="/announcements"
+                            element={
+                                <AdminOnlyRoute>
+                                    <AnnouncementsPage />
                                 </AdminOnlyRoute>
                             }
                         />
