@@ -44,7 +44,7 @@ export const auth = betterAuth({
   },
   plugins: [
     admin({
-      adminUserIds: ["IyOLTbLrISwOdmyHJeG0aDgDqjyHnFJp"],
+      adminUserIds: ["bwxxiqOpOknRYaom20Iyt4OdjVBnjGrU"],
     }),
   ],
 });

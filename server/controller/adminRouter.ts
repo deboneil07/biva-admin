@@ -5,7 +5,7 @@ import { db } from "../db";
 import { user } from "../db/auth-schema";
 import { desc, eq, ne } from "drizzle-orm";
 import { type UploadFileResult } from "../utils/cloudinary-service";
-import { uploadImage } from "./imageController";
+import { uploadImageVideoController, uploadMediaMethod } from "./imageController";
 
 export const adminRouter = new Hono();
 
@@ -36,7 +36,7 @@ adminRouter.post(
         return c.json({ Error: "Aadhar or PAN image file is required!" }, 400);
       }
 
-      const uploadedAadhar: UploadFileResult | undefined = await uploadImage(
+      const uploadedAadhar: UploadFileResult | undefined = await uploadMediaMethod(
         aadharFile,
         "adminEmployeeImages",
       );
@@ -47,16 +47,16 @@ adminRouter.post(
           500,
         );
       }
-      aadharImageUrl = uploadedAadhar.secure_url;
+      aadharImageUrl = uploadedAadhar.optimized_url;
 
       const mainImageFile = parsedBody.image;
 
       if (mainImageFile instanceof File) {
         const uploadedMainImage: UploadFileResult | undefined =
-          await uploadImage(mainImageFile, "adminEmployeeImages");
+          await uploadMediaMethod(mainImageFile, "adminEmployeeImages");
 
         if (uploadedMainImage?.secure_url) {
-          mainImageUrl = uploadedMainImage.secure_url;
+          mainImageUrl = uploadedMainImage.optimized_url;
         } else {
           console.warn(
             "Main profile image upload failed. Proceeding with null URL.",

@@ -4,20 +4,9 @@ import { useMemo, useEffect, useRef } from "react";
 
 export default function Team() {
   const { data, error, isFetching } = useUser();
-  const renderCount = useRef(0);
-  
-  // Track render count to debug infinite renders
-  useEffect(() => {
-    renderCount.current += 1;
-    console.log(`Team component render #${renderCount.current}`);
-    if (renderCount.current > 5) {
-      console.warn("Too many renders detected - possible infinite loop!");
-    }
-  });
 
-  // ✅ Memoize data to prevent re-renders
   const users = useMemo(() => {
-    console.log("Memoizing users data:", data?.data?.users);
+   
     return data?.data?.users ?? [];
   }, [data]);
 

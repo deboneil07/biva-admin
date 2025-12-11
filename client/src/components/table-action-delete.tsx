@@ -20,9 +20,15 @@ export default function TableActionDelete({ data }: TableActionDeleteProps) {
 
     async function run() {
         deleteUser({
-            id: data.id
+            id: [data.id]
         })
     }
+
+    useEffect(() => {
+        if(deleteUserData) {
+            toast.error("User deleted successfully");
+        }
+    },[deleteUserData]);
 
   
     useEffect(() => {
