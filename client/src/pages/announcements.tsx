@@ -42,7 +42,7 @@ import {
 
 // Textarea component
 interface TextareaProps
-    extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+    extends React.TextareaHTMLAttributes<HTMLTextAreaElement> { }
 
 function Textarea({ className, ...props }: TextareaProps) {
     return (
@@ -109,8 +109,8 @@ export const BannerTemplate: React.FC<AnnouncementData> = ({
             styling.fontSize === "sm"
                 ? "14px"
                 : styling.fontSize === "lg"
-                  ? "18px"
-                  : "16px",
+                    ? "18px"
+                    : "16px",
     };
 
     return (
@@ -158,8 +158,8 @@ export const ModalTemplate: React.FC<AnnouncementData> = ({
             styling.fontSize === "sm"
                 ? "14px"
                 : styling.fontSize === "lg"
-                  ? "18px"
-                  : "16px",
+                    ? "18px"
+                    : "16px",
     };
 
     return (
@@ -234,8 +234,8 @@ export const NotificationTemplate: React.FC<AnnouncementData> = ({
             styling.fontSize === "sm"
                 ? "14px"
                 : styling.fontSize === "lg"
-                  ? "18px"
-                  : "16px",
+                    ? "18px"
+                    : "16px",
         borderLeftColor: styling.borderColor || "#3b82f6",
     };
 
@@ -282,8 +282,8 @@ export const PopupTemplate: React.FC<AnnouncementData> = ({
             styling.fontSize === "sm"
                 ? "14px"
                 : styling.fontSize === "lg"
-                  ? "18px"
-                  : "16px",
+                    ? "18px"
+                    : "16px",
     };
 
     return (
@@ -355,9 +355,92 @@ PreviewBanner.displayName = "PreviewBanner";
 
 const PreviewModal = React.memo((props: AnnouncementData) => {
     if (!props.title) return null;
+
+    const fontSize = props.styling.fontSize === "sm" ? "14px" : props.styling.fontSize === "lg" ? "20px" : "16px";
+    const titleSize = props.styling.fontSize === "sm" ? "18px" : props.styling.fontSize === "lg" ? "24px" : "20px";
+
     return (
         <div className="absolute inset-0 z-50">
-            <ModalTemplate {...props} />
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+                <div
+                    className="rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border-0"
+                    style={{
+                        backgroundColor: props.styling.backgroundColor,
+                        color: props.styling.textColor,
+                    }}
+                >
+                    {/* Header with close button */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: `${props.styling.textColor}15` }}>
+                        <h4
+                            className="font-bold tracking-tight"
+                            style={{
+                                textAlign: props.styling.alignment,
+                                fontSize: titleSize,
+                                color: props.styling.textColor,
+                            }}
+                        >
+                            {props.title}
+                        </h4>
+                        {props.onClose && (
+                            <button
+                                onClick={props.onClose}
+                                className="rounded-full p-2 transition-all duration-200 hover:bg-opacity-10"
+                                style={{
+                                    backgroundColor: `${props.styling.textColor}00`,
+                                    color: props.styling.textColor,
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${props.styling.textColor}15`}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = `${props.styling.textColor}00`}
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Image */}
+                    {props.image && (
+                        <div className="relative w-full aspect-video overflow-hidden">
+                            <img
+                                src={props.image}
+                                alt="Announcement"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                    )}
+
+                    {/* Content */}
+                    <div className="px-6 py-5">
+                        <p
+                            className="leading-relaxed"
+                            style={{
+                                textAlign: props.styling.alignment,
+                                fontSize: fontSize,
+                                color: props.styling.textColor,
+                                opacity: 0.9,
+                            }}
+                        >
+                            {props.body}
+                        </p>
+                    </div>
+
+                    {/* Footer with action button */}
+                    {props.onClose && (
+                        <div className="px-6 pb-6 flex justify-end gap-3">
+                            <button
+                                onClick={props.onClose}
+                                className="px-6 py-2.5 rounded-full font-semibold transition-all duration-200 hover:opacity-90"
+                                style={{
+                                    backgroundColor: props.styling.textColor,
+                                    color: props.styling.backgroundColor,
+                                    fontSize: "14px",
+                                }}
+                            >
+                                Got it
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 });
@@ -369,7 +452,33 @@ const PreviewNotification = React.memo((props: AnnouncementData) => {
     return (
         <div className="absolute inset-0 z-50 pointer-events-none">
             <div className="relative w-full h-full">
-                <NotificationTemplate {...props} />
+                <div className="absolute top-4 right-4 max-w-sm">
+                    <div
+                        className="p-4 rounded-lg shadow-lg border-l-4 bg-white border border-gray-200 pointer-events-auto"
+                        style={{
+                            backgroundColor: props.styling.backgroundColor,
+                            color: props.styling.textColor,
+                            borderLeftColor: props.styling.borderColor || "#3b82f6",
+                            fontSize: props.styling.fontSize === "sm" ? "14px" : props.styling.fontSize === "lg" ? "18px" : "16px"
+                        }}
+                    >
+                        <div className="flex items-start gap-3">
+                            <Bell className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-sm mb-1 truncate">
+                                    {props.title}
+                                </h4>
+                                <p className="text-sm line-clamp-3">{props.body}</p>
+                            </div>
+                            {props.onClose && (
+                                <X
+                                    className="w-4 h-4 opacity-50 cursor-pointer hover:opacity-75 flex-shrink-0"
+                                    onClick={props.onClose}
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -379,10 +488,83 @@ PreviewNotification.displayName = "PreviewNotification";
 
 const PreviewPopup = React.memo((props: AnnouncementData) => {
     if (!props.title) return null;
+
+    const fontSize = props.styling.fontSize === "sm" ? "13px" : props.styling.fontSize === "lg" ? "16px" : "14px";
+    const titleSize = props.styling.fontSize === "sm" ? "15px" : props.styling.fontSize === "lg" ? "18px" : "16px";
+
     return (
         <div className="absolute inset-0 z-50 pointer-events-none">
             <div className="relative w-full h-full">
-                <PopupTemplate {...props} />
+                <div className="absolute bottom-4 right-4 max-w-sm animate-in slide-in-from-bottom-2">
+                    <div
+                        className="rounded-2xl shadow-2xl border-0 pointer-events-auto overflow-hidden backdrop-blur-sm"
+                        style={{
+                            backgroundColor: props.styling.backgroundColor,
+                            color: props.styling.textColor,
+                        }}
+                    >
+                        {/* Header */}
+                        <div className="flex items-start justify-between px-5 pt-4 pb-3">
+                            <div className="flex items-start gap-3 flex-1">
+                                <div className="rounded-full p-2 mt-0.5" style={{ backgroundColor: `${props.styling.textColor}15` }}>
+                                    <Bell className="w-4 h-4" style={{ color: props.styling.textColor }} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4
+                                        className="font-bold leading-tight"
+                                        style={{
+                                            textAlign: props.styling.alignment,
+                                            fontSize: titleSize,
+                                            color: props.styling.textColor,
+                                        }}
+                                    >
+                                        {props.title}
+                                    </h4>
+                                </div>
+                            </div>
+                            {props.onClose && (
+                                <button
+                                    onClick={props.onClose}
+                                    className="rounded-full p-1.5 transition-all duration-200 ml-2 flex-shrink-0"
+                                    style={{
+                                        backgroundColor: `${props.styling.textColor}00`,
+                                        color: props.styling.textColor,
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${props.styling.textColor}15`}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = `${props.styling.textColor}00`}
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Image */}
+                        {props.image && (
+                            <div className="px-5 pb-3">
+                                <img
+                                    src={props.image}
+                                    alt="Announcement"
+                                    className="w-full h-32 object-cover rounded-xl"
+                                />
+                            </div>
+                        )}
+
+                        {/* Content */}
+                        <div className="px-5 pb-4">
+                            <p
+                                className="leading-relaxed"
+                                style={{
+                                    textAlign: props.styling.alignment,
+                                    fontSize: fontSize,
+                                    color: props.styling.textColor,
+                                    opacity: 0.85,
+                                }}
+                            >
+                                {props.body}
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -585,12 +767,12 @@ export default function AnnouncementsPage() {
                                 style={{
                                     marginTop:
                                         formData.title &&
-                                        formData.displayType === "banner"
+                                            formData.displayType === "banner"
                                             ? "80px"
                                             : "0",
                                     height:
                                         formData.title &&
-                                        formData.displayType === "banner"
+                                            formData.displayType === "banner"
                                             ? "calc(100% - 80px)"
                                             : "100%",
                                 }}

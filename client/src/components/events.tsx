@@ -183,7 +183,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
         cell: ({ row }) => (
             <div className="text-sm">
                 {row.original.date
-                    ? new Date(row.original.date).toLocaleDateString()
+                    ? row.original.date
                     : "No date"}
             </div>
         ),
@@ -345,8 +345,8 @@ export function Events({
             // Show error message
             toast.error(
                 error.response?.data?.message ||
-                    error.message ||
-                    "Failed to delete events. Please try again.",
+                error.message ||
+                "Failed to delete events. Please try again.",
             );
         } finally {
             setIsDeleting(false);
@@ -452,10 +452,10 @@ export function Events({
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
-                                                      header.column.columnDef
-                                                          .header,
-                                                      header.getContext(),
-                                                  )}
+                                                    header.column.columnDef
+                                                        .header,
+                                                    header.getContext(),
+                                                )}
                                         </TableHead>
                                     ))}
                                 </TableRow>
@@ -621,9 +621,7 @@ function TableCellViewer({
                                     <Label htmlFor="date">Date</Label>
                                     <Input
                                         id="date"
-                                        defaultValue={new Date(
-                                            item.date,
-                                        ).toLocaleDateString()}
+                                        defaultValue={item.date}
                                         disabled
                                         className="bg-muted"
                                     />
