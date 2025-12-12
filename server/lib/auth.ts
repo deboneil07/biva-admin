@@ -34,7 +34,7 @@ export const auth = betterAuth({
       },
     },
   },
-  trustedOrigins: ["http://localhost:5173"],
+  trustedOrigins: ["https://biva-admin.onrender.com"],
   session: {
     cookieCache: {
       enabled: true,
