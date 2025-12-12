@@ -43,9 +43,13 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24, // 1 day"
   },
   advanced: {
+    defaultCookieAttributes: {
+      sameSite: "none",
+      secure: true,
+      httpOnly: true,
+    },
     crossSubDomainCookies: {
-      enabled: true,
-      domain: "biva-admin.onrender.com"
+      enabled: false,
     },
     useSecureCookies: true,
   },
