@@ -42,6 +42,9 @@ export const auth = betterAuth({
     },
     expiresIn: 60 * 60 * 24, // 1 day"
   },
+  advanced: {
+    useSecureCookies: true,
+  },
   plugins: [
     admin({
       adminUserIds: ["bwxxiqOpOknRYaom20Iyt4OdjVBnjGrU"],
