@@ -544,7 +544,7 @@ function TableCellViewer({
 
         setIsUpdating(true);
         try {
-            const payload: any = {};
+            const payload: any = { public_id: item.public_id };
 
             if (formData.event_name !== item.name)
                 payload.event_name = formData.event_name;
