@@ -512,7 +512,7 @@ function TableCellViewer({
     const [isUpdating, setIsUpdating] = React.useState(false);
 
     const [formData, setFormData] = React.useState({
-        name: item.name || "",
+        event_name: item.name || "",
         group_name: item.group_name || "",
         date: item.date || "",
         time: item.time || "",
@@ -523,7 +523,7 @@ function TableCellViewer({
     React.useEffect(() => {
         if (isOpen) {
             setFormData({
-                name: item.name || "",
+                event_name: item.name || "",
                 group_name: item.group_name || "",
                 date: item.date || "",
                 time: item.time || "",
@@ -533,7 +533,7 @@ function TableCellViewer({
     }, [isOpen, item]);
 
     const hasChanges =
-        formData.name !== (item.name || "") ||
+        formData.event_name !== (item.name || "") ||
         formData.group_name !== (item.group_name || "") ||
         formData.date !== (item.date || "") ||
         formData.time !== (item.time || "") ||
@@ -546,7 +546,8 @@ function TableCellViewer({
         try {
             const payload: any = {};
 
-            if (formData.name !== item.name) payload.name = formData.name;
+            if (formData.event_name !== item.name)
+                payload.event_name = formData.event_name;
             if (formData.group_name !== item.group_name)
                 payload.group_name = formData.group_name;
             if (formData.date !== item.date) payload.date = formData.date;
@@ -605,11 +606,11 @@ function TableCellViewer({
                     <div className="flex flex-col gap-3">
                         <Label>Event Name</Label>
                         <Input
-                            value={formData.name}
+                            value={formData.event_name}
                             onChange={(e) =>
                                 setFormData({
                                     ...formData,
-                                    name: e.target.value,
+                                    event_name: e.target.value,
                                 })
                             }
                         />
