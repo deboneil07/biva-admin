@@ -162,6 +162,32 @@ export class CloudinaryService {
     }
   }
 
+  async updateMedia(public_id: string, options: Omit<UploadOptions, "public_id"> = {}): Promise<UploadFileResult | any> {
+    try {
+      if (options.context) {
+        const result = await Cloudinary.uploader.explicit(public_id, {
+          type: "upload",
+          resource_type: options.forceResourceType || "image",
+          context: options.context,
+          invalidate: true,
+        });
+
+        return {
+          public_id: result.public_id,
+          secure_url: result.secure_url,
+          context: result.context,
+          optimized_url: this.getOptimizedUrl(result),
+          raw: result,
+        };
+      }
+
+      throw new Error("Either source or context must be provided to update");
+    } catch (err) {
+      console.error("[CloudinaryService] Update failed:", err);
+      throw new Error(`Failed to update Cloudinary media: ${err.message}`);
+    }
+  }
+
   async listByMetadata(
     metadataKey: string,
     metadataValue: string,

@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
-import { type UploadFileResult } from "../utils/cloudinary-service";
+import { CloudinaryService, type UploadFileResult } from "../utils/cloudinary-service";
 import { deleteMediaFunction, uploadMediaMethod } from "./imageController";
 import { db } from "../db";
 import { adminEventTable } from "../drizzle/schema";
@@ -87,16 +87,35 @@ eventRouter.post("/create", async (c: Context) => {
 eventRouter.patch("/update/:id", async (c: Context) => {
   try {
     const event_id = c.req.param("id");
-    const body = await c.req.parseBody();
+    const body = await c.req.json();
+    const public_id = body.public_id;
 
+    if (!public_id) {
+      return c.json({ error: "Missing Cloudinary public_id" }, 400);
+    }
     console.log(body)
 
     const updates: any = {}
-    if (typeof body["event_name"] == "string") updates.event_name = body["event_name"];
-    if (typeof body["group_name"] == "string") updates.group_name = body["group_name"];
-    if (typeof body["date"] == "string") updates.date = body["date"];
-    if (typeof body["time"] == "string") updates.time = body["time"];
-    if (typeof body["price"] == "string") updates.price = body["price"];
+    if (typeof body["event_name"] == "string") updates.eventName = body.event_name;
+    if (typeof body["group_name"] == "string") updates.groupName = body.group_name;
+    if (typeof body["date"] == "string") updates.date = body.date;
+    if (typeof body["time"] == "string") updates.time = body.time;
+    if (typeof body["price"] == "string") updates.ticketPrice = parseInt(body.price);
+
+    const cloudinary = new CloudinaryService();
+
+    const cloudinaryContext: Record<string, string> = {};
+    if (body.event_name) cloudinaryContext.event_name = body.event_name;
+    if (body.group_name) cloudinaryContext.group_name = body.group_name;
+    if (body.date) cloudinaryContext.date = body.date;
+    if (body.time) cloudinaryContext.time = body.time;
+    if (body.price) cloudinaryContext.ticket_price = body.price;
+
+    await cloudinary.updateMedia(updates.public_id, {
+      folder: "events",
+      context: cloudinaryContext,
+    });
+
 
     if (Object.keys(updates).length == 0) {
       return c.json({ error: "no fields provided for updation!" }, 400);
@@ -112,6 +131,7 @@ eventRouter.patch("/update/:id", async (c: Context) => {
       message: "updated successfully",
       event: res[0],
     })
+
   } catch (err) {
     console.error(err);
     return c.json({ error: err }, 500);
