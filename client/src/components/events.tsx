@@ -1,21 +1,3 @@
-/**
- * Events Management Component
- *
- * This component displays and manages event information.
- *
- * Sample data structure:
- * {
- *   event_id: "EVT-001",
- *   price: "2500",
- *   name: "Wedding Reception",
- *   group_name: "Sharma Family",
- *   date: "2024-12-25",
- *   time: "18:00",
- *   public_id: "event_wedding_001",
- *   url: "https://example.com/event-image.jpg"
- * }
- */
-
 import * as React from "react";
 
 import {
@@ -182,9 +164,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
         header: "Date",
         cell: ({ row }) => (
             <div className="text-sm">
-                {row.original.date
-                    ? row.original.date
-                    : "No date"}
+                {row.original.date ? row.original.date : "No date"}
             </div>
         ),
     },
@@ -345,8 +325,8 @@ export function Events({
             // Show error message
             toast.error(
                 error.response?.data?.message ||
-                error.message ||
-                "Failed to delete events. Please try again.",
+                    error.message ||
+                    "Failed to delete events. Please try again.",
             );
         } finally {
             setIsDeleting(false);
@@ -452,10 +432,10 @@ export function Events({
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
-                                                    header.column.columnDef
-                                                        .header,
-                                                    header.getContext(),
-                                                )}
+                                                      header.column.columnDef
+                                                          .header,
+                                                      header.getContext(),
+                                                  )}
                                         </TableHead>
                                     ))}
                                 </TableRow>
@@ -529,6 +509,60 @@ function TableCellViewer({
 }) {
     const isMobile = useIsMobile();
     const [isOpen, setIsOpen] = React.useState(false);
+    const [isUpdating, setIsUpdating] = React.useState(false);
+
+    const [formData, setFormData] = React.useState({
+        name: item.name || "",
+        group_name: item.group_name || "",
+        date: item.date || "",
+        time: item.time || "",
+        price: item.price || "",
+    });
+
+    // reset on open
+    React.useEffect(() => {
+        if (isOpen) {
+            setFormData({
+                name: item.name || "",
+                group_name: item.group_name || "",
+                date: item.date || "",
+                time: item.time || "",
+                price: item.price || "",
+            });
+        }
+    }, [isOpen, item]);
+
+    const hasChanges =
+        formData.name !== (item.name || "") ||
+        formData.group_name !== (item.group_name || "") ||
+        formData.date !== (item.date || "") ||
+        formData.time !== (item.time || "") ||
+        formData.price !== (item.price || "");
+
+    const handleUpdate = async () => {
+        if (!hasChanges) return;
+
+        setIsUpdating(true);
+        try {
+            const payload: any = {};
+
+            if (formData.name !== item.name) payload.name = formData.name;
+            if (formData.group_name !== item.group_name)
+                payload.group_name = formData.group_name;
+            if (formData.date !== item.date) payload.date = formData.date;
+            if (formData.time !== item.time) payload.time = formData.time;
+            if (formData.price !== item.price) payload.price = formData.price;
+
+            await instance.patch(`/event/update/${item.event_id}`, payload);
+
+            toast.success("Event updated");
+            setIsOpen(false);
+        } catch (err) {
+            toast.error("Update failed");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
 
     return (
         <Drawer
@@ -546,122 +580,107 @@ function TableCellViewer({
                     </Button>
                 )}
             </DrawerTrigger>
+
             <DrawerContent>
                 <DrawerHeader className="gap-1">
                     <DrawerTitle>
-                        Event Details -{" "}
+                        Event Details –{" "}
                         {item.name || item.event_id || item.public_id}
                     </DrawerTitle>
                 </DrawerHeader>
+
                 <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-                    {/* Event Image Section */}
-                    <div className="grid gap-4">
-                        <div className="flex flex-col gap-2">
-                            <Label>Event Image</Label>
-                            <div className="w-full h-48 rounded-lg overflow-hidden border">
-                                <img
-                                    src={item.url}
-                                    alt={item.name || "Event image"}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        e.currentTarget.src =
-                                            "/placeholder-event.jpg";
-                                    }}
-                                />
-                            </div>
+                    {/* Image */}
+                    <div className="flex flex-col gap-2">
+                        <Label>Event Image</Label>
+                        <div className="h-48 overflow-hidden rounded-lg border">
+                            <img
+                                src={item.url}
+                                className="h-full w-full object-cover"
+                            />
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="public_id">Public ID</Label>
-                            <Input
-                                id="public_id"
-                                defaultValue={item.public_id}
-                                disabled
-                                className="font-mono text-xs bg-muted"
-                            />
-                        </div>
-                        {item.event_id && (
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="event_id">Event ID</Label>
-                                <Input
-                                    id="event_id"
-                                    defaultValue={item.event_id}
-                                    disabled
-                                    className="font-mono text-xs bg-muted"
-                                />
-                            </div>
-                        )}
-                        {item.name && (
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="event_name">Event Name</Label>
-                                <Input
-                                    id="event_name"
-                                    defaultValue={item.name}
-                                    disabled
-                                    className="bg-muted"
-                                />
-                            </div>
-                        )}
-                        {item.group_name && (
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="group_name">Group Name</Label>
-                                <Input
-                                    id="group_name"
-                                    defaultValue={item.group_name}
-                                    disabled
-                                    className="bg-muted"
-                                />
-                            </div>
-                        )}
+                    {/* Editable Fields */}
+                    <div className="flex flex-col gap-3">
+                        <Label>Event Name</Label>
+                        <Input
+                            value={formData.name}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    name: e.target.value,
+                                })
+                            }
+                        />
+
+                        <Label>Group Name</Label>
+                        <Input
+                            value={formData.group_name}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    group_name: e.target.value,
+                                })
+                            }
+                        />
+
                         <div className="grid grid-cols-2 gap-3">
-                            {item.date && (
-                                <div className="flex flex-col gap-3">
-                                    <Label htmlFor="date">Date</Label>
-                                    <Input
-                                        id="date"
-                                        defaultValue={item.date}
-                                        disabled
-                                        className="bg-muted"
-                                    />
-                                </div>
-                            )}
-                            {item.time && (
-                                <div className="flex flex-col gap-3">
-                                    <Label htmlFor="time">Time</Label>
-                                    <Input
-                                        id="time"
-                                        defaultValue={item.time}
-                                        disabled
-                                        className="bg-muted"
-                                    />
-                                </div>
-                            )}
-                        </div>
-                        {item.price && (
-                            <div className="flex flex-col gap-3">
-                                <Label htmlFor="price">Price</Label>
+                            <div>
+                                <Label>Date</Label>
                                 <Input
-                                    id="price"
-                                    defaultValue={`₹${item.price}`}
-                                    disabled
-                                    className="bg-muted"
+                                    type="date"
+                                    value={formData.date}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            date: e.target.value,
+                                        })
+                                    }
                                 />
                             </div>
-                        )}
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="image_url">Image URL</Label>
-                            <Input
-                                id="image_url"
-                                defaultValue={item.url}
-                                disabled
-                                className="bg-muted font-mono text-xs"
-                            />
+
+                            <div>
+                                <Label>Time</Label>
+                                <Input
+                                    type="time"
+                                    value={formData.time}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            time: e.target.value,
+                                        })
+                                    }
+                                />
+                            </div>
                         </div>
+
+                        <Label>Price</Label>
+                        <Input
+                            value={formData.price}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    price: e.target.value,
+                                })
+                            }
+                        />
                     </div>
                 </div>
+
                 <DrawerFooter>
+                    <Button
+                        onClick={handleUpdate}
+                        disabled={!hasChanges || isUpdating}
+                        className="w-full"
+                    >
+                        {isUpdating
+                            ? "Updating..."
+                            : hasChanges
+                              ? "Update"
+                              : "No Changes"}
+                    </Button>
+
                     <Button
                         variant="outline"
                         onClick={() => setIsOpen(false)}
@@ -674,50 +693,3 @@ function TableCellViewer({
         </Drawer>
     );
 }
-
-// // Sample fake data for testing
-// export const sampleEvents: TableDataType[] = [
-//   {
-//     event_id: "EVT-2024-001",
-//     price: "15000",
-//     name: "Wedding Reception",
-//     group_name: "Sharma Family",
-//     date: "2024-12-25",
-//     time: "18:00",
-//     public_id: "event_wedding_reception_001",
-//     url: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=400&h=300&fit=crop",
-//     venue_img_url: "",
-//   },
-//   {
-//     event_id: "EVT-2024-002",
-//     price: "8500",
-//     name: "Birthday Party",
-//     group_name: "Patel Celebration",
-//     date: "2024-11-15",
-//     time: "16:00",
-//     public_id: "event_birthday_party_002",
-//     url: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&h=300&fit=crop",
-//     venue_img_url: "",
-//   },
-//   {
-//     event_id: "EVT-2024-003",
-//     price: "12000",
-//     name: "Corporate Meeting",
-//     group_name: "Tech Solutions Ltd",
-//     date: "2024-10-30",
-//     time: "10:00",
-//     public_id: "event_corporate_meeting_003",
-//     url: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=400&h=300&fit=crop",
-//     venue_img_url: "",
-//   },
-//   {
-//     event_id: "EVT-2024-003",
-//     price: "12000",
-//     name: "Corporate Meeting",
-//     group_name: "Tech Solutions Ltd",
-//     date: "2024-10-30",
-//     time: "10:00",
-//     public_id: "event_corporate_meeting_003",
-//     url: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=400&h=300&fit=crop",
-//   },
-// ];
