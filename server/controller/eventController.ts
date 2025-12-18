@@ -5,7 +5,7 @@ import { deleteMediaFunction, uploadMediaMethod } from "./imageController";
 import { db } from "../db";
 import { adminEventTable } from "../drizzle/schema";
 import { generate_uuid } from "../utils/uuid";
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { convertUrlsToPublicId } from "../utils/getPublicIdFromUrl";
 
 export const eventRouter = new Hono();
@@ -83,6 +83,38 @@ eventRouter.post("/create", async (c: Context) => {
     return c.json({ error: "Failed to create event" }, 500);
   }
 });
+
+eventRouter.patch("/update/:id", async (c: Context) => {
+  try {
+    const event_id = c.req.param("id");
+    const body = await c.req.parseBody();
+
+    const updates: any = {}
+    if (typeof body["event_name"] == "string") updates.event_name = body["event_name"];
+    if (typeof body["group_name"] == "string") updates.group_name = body["group_name"];
+    if (typeof body["date"] == "string") updates.date = body["date"];
+    if (typeof body["time"] == "string") updates.time = body["time"];
+    if (typeof body["price"] == "string") updates.price = body["price"];
+
+    if (Object.keys(updates).length == 0) {
+      return c.json({ error: "no fields provided for updation!" }, 400);
+    }
+
+    const res = await db.update(adminEventTable).set(updates).where(eq(adminEventTable.eventId, event_id)).returning();
+    if (res.length == 0) {
+      return c.json({ error: "event not found!" }, 404);
+    }
+
+    return c.json({
+      success: true,
+      message: "updated successfully",
+      event: res[0],
+    })
+  } catch (err) {
+    console.error(err);
+    return c.json({ error: err }, 500);
+  }
+})
 
 eventRouter.delete("/delete", async (c: Context) => {
   try {

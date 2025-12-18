@@ -1,6 +1,6 @@
 import axios from "axios";
 
 export const instance = axios.create({
-  baseURL: "https://biva-admin-server.onrender.com",
+  baseURL: "http://localhost:3000",
   withCredentials: true
 });
