@@ -89,6 +89,8 @@ eventRouter.patch("/update/:id", async (c: Context) => {
     const event_id = c.req.param("id");
     const body = await c.req.parseBody();
 
+    console.log(body)
+
     const updates: any = {}
     if (typeof body["event_name"] == "string") updates.event_name = body["event_name"];
     if (typeof body["group_name"] == "string") updates.group_name = body["group_name"];
