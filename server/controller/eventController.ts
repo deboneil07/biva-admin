@@ -111,7 +111,9 @@ eventRouter.patch("/update/:id", async (c: Context) => {
     if (body.time) cloudinaryContext.time = body.time;
     if (body.price) cloudinaryContext.ticket_price = body.price;
 
-    await cloudinary.updateMedia(updates.public_id, {
+    cloudinaryContext.position = "events"
+
+    await cloudinary.updateMedia(public_id, {
       folder: "events",
       context: cloudinaryContext,
     });
