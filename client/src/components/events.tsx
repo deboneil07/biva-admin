@@ -50,7 +50,7 @@ import { Eye } from "lucide-react";
 export type TableDataType = {
     event_id?: string;
     price?: string;
-    name?: string;
+    event_name?: string;
     group_name?: string;
     date?: string;
     time?: string;
@@ -61,7 +61,7 @@ export type TableDataType = {
 export const schema = z.object({
     event_id: z.string().optional(),
     price: z.string().optional(),
-    name: z.string().optional(),
+    event_name: z.string().optional(),
     group_name: z.string().optional(),
     date: z.string().optional(),
     time: z.string().optional(),
@@ -146,7 +146,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
         header: "Event Name",
         cell: ({ row }) => (
             <div className="text-sm font-medium">
-                {row.original.name || "No name available"}
+                {row.original.event_name || "No name available"}
             </div>
         ),
     },
@@ -627,7 +627,9 @@ function TableCellViewer({
                             <div>
                                 <Label>Date</Label>
                                 <Input
-                                    type="date"
+                                    type={isMobile ? "text" : "date"}
+                                    inputMode="numeric"
+                                    placeholder="YYYY-MM-DD"
                                     value={formData.date}
                                     onChange={(e) =>
                                         setFormData({
@@ -641,7 +643,9 @@ function TableCellViewer({
                             <div>
                                 <Label>Time</Label>
                                 <Input
-                                    type="time"
+                                    type={isMobile ? "text" : "time"}
+                                    inputMode="numeric"
+                                    placeholder="HH:MM"
                                     value={formData.time}
                                     onChange={(e) =>
                                         setFormData({
