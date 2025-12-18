@@ -540,19 +540,16 @@ function TableCellViewer({
         formData.price !== (item.price || "");
 
     const handleUpdate = async () => {
-        if (!hasChanges) return;
-
         setIsUpdating(true);
         try {
-            const payload: any = { public_id: item.public_id };
-
-            if (formData.event_name !== item.name)
-                payload.event_name = formData.event_name;
-            if (formData.group_name !== item.group_name)
-                payload.group_name = formData.group_name;
-            if (formData.date !== item.date) payload.date = formData.date;
-            if (formData.time !== item.time) payload.time = formData.time;
-            if (formData.price !== item.price) payload.price = formData.price;
+            const payload = {
+                public_id: item.public_id,
+                event_name: formData.event_name || item.name,
+                group_name: formData.group_name || item.group_name,
+                date: formData.date || item.date,
+                time: formData.time || item.time,
+                price: formData.price || item.price,
+            };
 
             await instance.patch(`/event/update/${item.event_id}`, payload);
 
