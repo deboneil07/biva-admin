@@ -325,8 +325,8 @@ export function Events({
             // Show error message
             toast.error(
                 error.response?.data?.message ||
-                    error.message ||
-                    "Failed to delete events. Please try again.",
+                error.message ||
+                "Failed to delete events. Please try again.",
             );
         } finally {
             setIsDeleting(false);
@@ -432,10 +432,10 @@ export function Events({
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
-                                                      header.column.columnDef
-                                                          .header,
-                                                      header.getContext(),
-                                                  )}
+                                                    header.column.columnDef
+                                                        .header,
+                                                    header.getContext(),
+                                                )}
                                         </TableHead>
                                     ))}
                                 </TableRow>
@@ -512,7 +512,7 @@ function TableCellViewer({
     const [isUpdating, setIsUpdating] = React.useState(false);
 
     const [formData, setFormData] = React.useState({
-        event_name: item.name || "",
+        event_name: item.event_name || "",
         group_name: item.group_name || "",
         date: item.date || "",
         time: item.time || "",
@@ -523,7 +523,7 @@ function TableCellViewer({
     React.useEffect(() => {
         if (isOpen) {
             setFormData({
-                event_name: item.name || "",
+                event_name: item.event_name || "",
                 group_name: item.group_name || "",
                 date: item.date || "",
                 time: item.time || "",
@@ -533,7 +533,7 @@ function TableCellViewer({
     }, [isOpen, item]);
 
     const hasChanges =
-        formData.event_name !== (item.name || "") ||
+        formData.event_name !== (item.event_name || "") ||
         formData.group_name !== (item.group_name || "") ||
         formData.date !== (item.date || "") ||
         formData.time !== (item.time || "") ||
@@ -544,7 +544,7 @@ function TableCellViewer({
         try {
             const payload = {
                 public_id: item.public_id,
-                event_name: formData.event_name || item.name,
+                event_name: formData.event_name || item.event_name,
                 group_name: formData.group_name || item.group_name,
                 date: formData.date || item.date,
                 time: formData.time || item.time,
@@ -583,7 +583,7 @@ function TableCellViewer({
                 <DrawerHeader className="gap-1">
                     <DrawerTitle>
                         Event Details –{" "}
-                        {item.name || item.event_id || item.public_id}
+                        {item.event_name || item.event_id || item.public_id}
                     </DrawerTitle>
                 </DrawerHeader>
 
@@ -679,8 +679,8 @@ function TableCellViewer({
                         {isUpdating
                             ? "Updating..."
                             : hasChanges
-                              ? "Update"
-                              : "No Changes"}
+                                ? "Update"
+                                : "No Changes"}
                     </Button>
 
                     <Button
