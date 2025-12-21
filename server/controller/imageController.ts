@@ -254,7 +254,7 @@ export const uploadImageVideoController = async (
       }
     }
     const res = await cloudService.uploadMedia(file, {
-      maxSizeBytes: 10 * 1024 * 1024,
+      maxSizeBytes: 20 * 1024 * 1024,
       folder,
       context: metadata,
     });
