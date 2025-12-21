@@ -21,13 +21,10 @@ import {
     Save,
     X,
     Bell,
-    Megaphone,
-    Globe,
     RefreshCw,
     Monitor,
     Smartphone,
     Tablet,
-    Image as ImageIcon,
     Upload,
     Trash,
     RotateCcw,
@@ -37,6 +34,7 @@ import {
 } from "lucide-react";
 import {
     useCreateAnnouncement,
+    useDeleteAnnouncement,
     type CreateAnnouncementRequest,
 } from "../hooks/useAnnouncements";
 
@@ -587,6 +585,17 @@ export default function AnnouncementsPage() {
 
     // Use the TanStack Query mutation hook
     const createAnnouncementMutation = useCreateAnnouncement();
+    const deleteAnnouncementMutation = useDeleteAnnouncement();
+
+    const handleDelete = () => {
+        if (window.confirm("Are you sure you want to delete the active announcement?")) {
+            deleteAnnouncementMutation.mutate(undefined, {
+                onSuccess: () => {
+                    handleReset();
+                },
+            });
+        }
+    };
 
     const handleSave = () => {
         if (!formData.title || !formData.body) return;
@@ -632,7 +641,10 @@ export default function AnnouncementsPage() {
         (field: keyof Announcement["styling"], value: any) => {
             setFormData((prev) => ({
                 ...prev,
-                styling: { ...prev.styling, [field]: value },
+                styling: {
+                    ...(prev.styling || defaultStyling),
+                    [field]: value
+                } as Announcement["styling"],
             }));
         },
         [],
@@ -672,11 +684,11 @@ export default function AnnouncementsPage() {
     };
 
     const previewStyle = useMemo(
-        () => ({
+        (): Announcement["styling"] => ({
             backgroundColor:
                 formData.styling?.backgroundColor ||
                 defaultStyling.backgroundColor,
-            color: formData.styling?.textColor || defaultStyling.textColor,
+            textColor: formData.styling?.textColor || defaultStyling.textColor,
             borderColor:
                 formData.styling?.borderColor || defaultStyling.borderColor,
             fontSize: formData.styling?.fontSize || defaultStyling.fontSize,
@@ -850,6 +862,26 @@ export default function AnnouncementsPage() {
                                             {createAnnouncementMutation.error
                                                 ?.message ||
                                                 "Failed to create announcement"}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {deleteAnnouncementMutation.isSuccess && (
+                                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md text-green-700">
+                                        <CheckCircle className="w-4 h-4" />
+                                        <span className="text-sm">
+                                            Announcement deleted successfully!
+                                        </span>
+                                    </div>
+                                )}
+
+                                {deleteAnnouncementMutation.isError && (
+                                    <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
+                                        <AlertCircle className="w-4 h-4" />
+                                        <span className="text-sm">
+                                            {deleteAnnouncementMutation.error
+                                                ?.message ||
+                                                "Failed to delete announcement"}
                                         </span>
                                     </div>
                                 )}
@@ -1161,10 +1193,25 @@ export default function AnnouncementsPage() {
                                     variant="outline"
                                     onClick={handleReset}
                                     disabled={
-                                        createAnnouncementMutation.isPending
+                                        createAnnouncementMutation.isPending ||
+                                        deleteAnnouncementMutation.isPending
                                     }
                                 >
                                     <RotateCcw className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                    variant="destructive"
+                                    onClick={handleDelete}
+                                    disabled={
+                                        createAnnouncementMutation.isPending ||
+                                        deleteAnnouncementMutation.isPending
+                                    }
+                                >
+                                    {deleteAnnouncementMutation.isPending ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Trash className="w-4 h-4" />
+                                    )}
                                 </Button>
                             </CardFooter>
                         </Card>

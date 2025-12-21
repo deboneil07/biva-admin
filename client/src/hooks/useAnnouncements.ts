@@ -42,6 +42,49 @@ export interface ApiError {
     details?: any;
 }
 
+const deleteAnnouncementAPI = async (): Promise<void> => {
+    try {
+        console.log("🌐 Sending DELETE request to backend...");
+        await instance.delete("https://biva-bakery-backend.onrender.com/announcements");
+        console.log("🎉 Announcement deleted successfully");
+    } catch (error) {
+        console.error("💥 API Error occurred during delete:", error);
+        if (error instanceof AxiosError) {
+            const errorMessage =
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                error.message ||
+                "Failed to delete announcement";
+
+            const apiError: ApiError = {
+                message: errorMessage,
+                statusCode: error.response?.status,
+                details: error.response?.data,
+            };
+            throw apiError;
+        }
+        throw {
+            message: error instanceof Error ? error.message : "An unknown error occurred",
+        } as ApiError;
+    }
+};
+
+// Custom hook using TanStack Query
+export const useDeleteAnnouncement = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation<void, ApiError, void>({
+        mutationFn: deleteAnnouncementAPI,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["announcements"] });
+            console.log("✅ Announcement deleted successfully");
+        },
+        onError: (error: ApiError) => {
+            console.error("❌ Failed to delete announcement:", error.message);
+        },
+    });
+};
+
 // API function to create announcement using FormData
 const createAnnouncementAPI = async (
     data: CreateAnnouncementRequest,
