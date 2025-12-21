@@ -45,7 +45,7 @@ export interface ApiError {
 const deleteAnnouncementAPI = async (): Promise<void> => {
     try {
         console.log("🌐 Sending DELETE request to backend...");
-        await instance.delete("/announcements");
+        await instance.delete("https://biva-bakery-backend.onrender.com/announcements");
         console.log("🎉 Announcement deleted successfully");
     } catch (error) {
         console.error("💥 API Error occurred during delete:", error);
@@ -153,7 +153,7 @@ const createAnnouncementAPI = async (
 
         // Use instance instead of axios directly (to match your setup)
         const response = await instance.post<CreateAnnouncementResponse>(
-            "/announcements",
+            "https://biva-bakery-backend.onrender.com/announcements",
             formData,
             {
                 headers: {
