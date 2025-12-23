@@ -8,7 +8,7 @@ export const PROPS = {
     gallery: [
         {
             key: "position",
-            value: "gallery",
+            value: ["gallery-hotel", "gallery-food-court", "gallery-bakery"],
         },
     ],
     banquet: [
