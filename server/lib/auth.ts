@@ -34,7 +34,8 @@ export const auth = betterAuth({
       },
     },
   },
-  trustedOrigins: ["https://biva-admin.onrender.com"],
+  trustedOrigins: ["http://localhost:5174"],
+  //https://biva-admin.onrender.com
   session: {
     cookieCache: {
       enabled: true,
@@ -42,17 +43,17 @@ export const auth = betterAuth({
     },
     expiresIn: 60 * 60 * 24,
   },
-  advanced: {
-    defaultCookieAttributes: {
-      sameSite: "none",
-      secure: true,
-      httpOnly: true,
-    },
-    crossSubDomainCookies: {
-      enabled: false,
-    },
-    useSecureCookies: true,
-  },
+  // advanced: {
+  //   defaultCookieAttributes: {
+  //     sameSite: "none",
+  //     secure: true,
+  //     httpOnly: true,
+  //   },
+  //   crossSubDomainCookies: {
+  //     enabled: false,
+  //   },
+  //   useSecureCookies: true,
+  // },
   plugins: [
     admin({
       adminUserIds: ["bwxxiqOpOknRYaom20Iyt4OdjVBnjGrU"],

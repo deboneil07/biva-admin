@@ -24,7 +24,7 @@ export default function useAuth() {
             const { data, error } = await authClient.signIn.email({
                 email: email,
                 password: password,
-                callbackURL: 'https://biva-admin.onrender.com/dashboard',
+                callbackURL: 'http://localhost:5174/dashboard',
                 // 'https://biva-admin.onrender.com/dashboard'
             })
             data ? signInSetData(data) : signInSetError(error);
