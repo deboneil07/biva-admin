@@ -17,7 +17,19 @@ export interface CreateAnnouncementRequest {
 }
 
 export interface CreateAnnouncementsRequest {
-    announcements: CreateAnnouncementRequest[];
+    images: (File | null)[];
+    payload: {
+        title: string;
+        body: string;
+        displayType: "banner" | "modal" | "popup" | "notification";
+        styling: {
+            backgroundColor: string;
+            textColor: string;
+            borderColor: string;
+            fontSize: "sm" | "md" | "lg";
+            alignment: "left" | "center" | "right";
+        };
+    }[];
 }
 
 export interface CreateAnnouncementResponse {
@@ -89,36 +101,14 @@ const createAnnouncementAPI = async (
     try {
         const formData = new FormData();
 
-        const payload = data.announcements.map((announcement) => ({
-            title: announcement.title,
-            body: announcement.body,
-            displayType: announcement.displayType,
-            styling: announcement.styling,
-        }));
+        formData.append("payload", JSON.stringify(data.payload));
 
-        formData.append("payload", JSON.stringify(payload));
-
-        for (let i = 0; i < data.announcements.length; i++) {
-            const announcement = data.announcements[i];
-            
-            if (announcement.image instanceof File && announcement.image.size > 0) {
-                formData.append("images", announcement.image);
-            } else if (
-                typeof announcement.image === "string" &&
-                announcement.image.startsWith("data:")
-            ) {
-                try {
-                    const response = await fetch(announcement.image);
-                    const blob = await response.blob();
-                    const file = new File([blob], `announcement-${i}.png`, {
-                        type: blob.type || "image/png",
-                    });
-                    formData.append("images", file);
-                } catch {
-                    formData.append("images", new File([], ""));
-                }
+        for (let i = 0; i < data.images.length; i++) {
+            const image = data.images[i];
+            if (image instanceof File) {
+                formData.append(`images[${i}]`, image);
             } else {
-                formData.append("images", new File([], ""));
+                formData.append(`images[${i}]`, new File([], ""));
             }
         }
 
