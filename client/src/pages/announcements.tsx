@@ -729,14 +729,23 @@ export default function AnnouncementsPage() {
         (e: React.ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
             if (file) {
-                console.log("📎 File selected:", file.name, file.type, file.size);
+                console.log(
+                    "📎 File selected:",
+                    file.name,
+                    file.type,
+                    file.size,
+                );
                 // Store the actual File object directly
                 setLocalForms((prev) =>
                     prev.map((f, idx) =>
                         idx === activeTab
-                            ? { ...f, image: file, imagePreview: URL.createObjectURL(file) }
-                            : f
-                    )
+                            ? {
+                                  ...f,
+                                  image: file,
+                                  imagePreview: URL.createObjectURL(file),
+                              }
+                            : f,
+                    ),
                 );
             }
         },
@@ -747,8 +756,8 @@ export default function AnnouncementsPage() {
         updateLocalForm("image", "");
         setLocalForms((prev) =>
             prev.map((f, idx) =>
-                idx === activeTab ? { ...f, imagePreview: "" } : f
-            )
+                idx === activeTab ? { ...f, imagePreview: "" } : f,
+            ),
         );
     }, [activeTab]);
 
@@ -778,23 +787,25 @@ export default function AnnouncementsPage() {
 
     const handleAnnounce = () => {
         // Prepare announcements array in the format expected by the hook
-        const announcements = forms.map(({ title, body, displayType, styling, image }) => {
-            console.log(`📤 Preparing ${displayType}:`, {
-                title,
-                hasImage: !!image,
-                imageType: typeof image,
-                isFile: image instanceof File,
-                fileName: image instanceof File ? image.name : 'not a file'
-            });
-            
-            return {
-                title,
-                body,
-                displayType,
-                styling,
-                image, // Can be File object or existing URL string
-            };
-        });
+        const announcements = forms.map(
+            ({ title, body, displayType, styling, image }) => {
+                console.log(`📤 Preparing ${displayType}:`, {
+                    title,
+                    hasImage: !!image,
+                    imageType: typeof image,
+                    isFile: image instanceof File,
+                    fileName: image instanceof File ? image.name : "not a file",
+                });
+
+                return {
+                    title,
+                    body,
+                    displayType,
+                    styling,
+                    image, // Can be File object or existing URL string
+                };
+            },
+        );
 
         console.log("🚀 Sending announcements:", announcements);
 
@@ -839,7 +850,11 @@ export default function AnnouncementsPage() {
     const announcementData: AnnouncementData = {
         title: localForms[activeTab].title || "",
         body: localForms[activeTab].body || "",
-        image: localForms[activeTab].imagePreview || (typeof localForms[activeTab].image === 'string' ? localForms[activeTab].image : undefined),
+        image:
+            localForms[activeTab].imagePreview ||
+            (typeof localForms[activeTab].image === "string"
+                ? localForms[activeTab].image
+                : undefined),
         styling: previewStyle,
     };
 
@@ -1061,12 +1076,19 @@ export default function AnnouncementsPage() {
 
                                 <div>
                                     <Label>Image (Optional)</Label>
-                                    {(localForms[activeTab].image || localForms[activeTab].imagePreview) ? (
+                                    {localForms[activeTab].image ||
+                                    localForms[activeTab].imagePreview ? (
                                         <div className="relative mt-1">
                                             <img
                                                 src={
-                                                    localForms[activeTab].imagePreview || 
-                                                    (typeof localForms[activeTab].image === 'string' ? localForms[activeTab].image : '')
+                                                    localForms[activeTab]
+                                                        .imagePreview ||
+                                                    (typeof localForms[
+                                                        activeTab
+                                                    ].image === "string"
+                                                        ? localForms[activeTab]
+                                                              .image
+                                                        : "")
                                                 }
                                                 alt="Preview"
                                                 className="w-full h-32 object-cover rounded border"
