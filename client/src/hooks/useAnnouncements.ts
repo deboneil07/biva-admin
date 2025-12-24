@@ -109,7 +109,7 @@ const createAnnouncementAPI = async (
             } else {
                 formData.append(`images[${i}]`, new File([], ""));
             }
-        });
+        };
 
         const response = await instance.post<{
             message: string;
