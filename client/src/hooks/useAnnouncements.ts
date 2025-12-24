@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { instance } from "@/utils/axios";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 
 export interface CreateAnnouncementRequest {
     title: string;
@@ -45,19 +45,15 @@ export interface ApiError {
 
 const deleteAnnouncementAPI = async (): Promise<void> => {
     try {
-        await instance.delete(
-            "https://biva-bakery-backend.onrender.com/announcements",
-        );
+        await instance.delete("http://localhost:4000/announcements");
     } catch (error) {
         if (error instanceof AxiosError) {
-            const errorMessage =
-                error.response?.data?.message ||
-                error.response?.data?.error ||
-                error.message ||
-                "Failed to delete announcement";
-
             const apiError: ApiError = {
-                message: errorMessage,
+                message:
+                    error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    error.message ||
+                    "Failed to delete announcement",
                 statusCode: error.response?.status,
                 details: error.response?.data,
             };
@@ -89,38 +85,27 @@ const createAnnouncementAPI = async (
     try {
         const formData = new FormData();
 
-        const payload = data.announcements.map((announcement) => ({
-            title: announcement.title,
-            body: announcement.body,
-            displayType: announcement.displayType,
-            styling: announcement.styling,
-        }));
+        // Separate payload (without images)
+        const payload = data.announcements.map(
+            ({ title, body, displayType, styling }) => ({
+                title,
+                body,
+                displayType,
+                styling,
+            }),
+        );
 
         formData.append("payload", JSON.stringify(payload));
 
-        for (let i = 0; i < data.announcements.length; i++) {
-            const announcement = data.announcements[i];
-            
-            if (announcement.image instanceof File && announcement.image.size > 0) {
+        // Add images separately
+        data.announcements.forEach((announcement) => {
+            if (announcement.image instanceof File) {
                 formData.append("images", announcement.image);
-            } else if (
-                typeof announcement.image === "string" &&
-                announcement.image.startsWith("data:")
-            ) {
-                try {
-                    const response = await fetch(announcement.image);
-                    const blob = await response.blob();
-                    const file = new File([blob], `announcement-${i}.png`, {
-                        type: blob.type || "image/png",
-                    });
-                    formData.append("images", file);
-                } catch {
-                    formData.append("images", new File([], ""));
-                }
             } else {
+                // Send empty file if no image
                 formData.append("images", new File([], ""));
             }
-        }
+        });
 
         const response = await instance.post<{
             message: string;
@@ -134,29 +119,24 @@ const createAnnouncementAPI = async (
         return response.data.data;
     } catch (error) {
         if (error instanceof AxiosError) {
-            const errorMessage =
-                error.response?.data?.message ||
-                error.response?.data?.error ||
-                error.message ||
-                "Failed to create announcement";
-
             const apiError: ApiError = {
-                message: errorMessage,
+                message:
+                    error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    error.message ||
+                    "Failed to create announcement",
                 statusCode: error.response?.status,
                 details: error.response?.data,
             };
-
             throw apiError;
         }
 
-        const genericError = {
+        throw {
             message:
                 error instanceof Error
                     ? error.message
                     : "An unknown error occurred",
         } as ApiError;
-
-        throw genericError;
     }
 };
 

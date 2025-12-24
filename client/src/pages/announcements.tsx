@@ -785,7 +785,7 @@ export default function AnnouncementsPage() {
                 body,
                 displayType,
                 styling,
-                image,
+                image, // Include image (File or string or undefined)
             }),
         );
 
