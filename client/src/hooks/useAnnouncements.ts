@@ -7,7 +7,7 @@ export interface CreateAnnouncementRequest {
     title: string;
     body: string;
     displayType: "banner" | "modal" | "popup" | "notification";
-    image?: string; // Base64 string from your form
+    image?: string | File; // Can be existing URL or File object
     styling: {
         backgroundColor: string;
         textColor: string;
@@ -15,6 +15,11 @@ export interface CreateAnnouncementRequest {
         fontSize: "sm" | "md" | "lg";
         alignment: "left" | "center" | "right";
     };
+}
+
+// Type for creating multiple announcements at once
+export interface CreateAnnouncementsRequest {
+    announcements: CreateAnnouncementRequest[];
 }
 
 // API Response type
@@ -85,74 +90,63 @@ export const useDeleteAnnouncement = () => {
     });
 };
 
-// API function to create announcement using FormData
+// API function to create announcements using FormData
 const createAnnouncementAPI = async (
-    data: CreateAnnouncementRequest,
-): Promise<CreateAnnouncementResponse> => {
+    data: CreateAnnouncementsRequest,
+): Promise<CreateAnnouncementResponse[]> => {
     try {
-        console.log("🚀 Creating FormData for announcement...");
+        console.log("🚀 Creating FormData for announcements...");
         const formData = new FormData();
 
-        // Append basic fields
-        formData.append("title", data.title);
-        formData.append("body", data.body);
-        formData.append("displayType", data.displayType);
+        // Prepare payload - array of announcement metadata (without images as files)
+        const payload = data.announcements.map((announcement) => ({
+            title: announcement.title,
+            body: announcement.body,
+            displayType: announcement.displayType,
+            image: typeof announcement.image === "string" ? announcement.image : "", // Keep existing URL or empty
+            styling: announcement.styling,
+        }));
 
-        // Append styling as JSON string
-        formData.append("styling", JSON.stringify(data.styling));
+        // Append payload as JSON string
+        formData.append("payload", JSON.stringify(payload));
 
-        console.log("📝 Basic fields appended:", {
-            title: data.title,
-            body: data.body,
-            displayType: data.displayType,
-            styling: data.styling,
-        });
+        console.log("📝 Payload prepared:", payload);
 
-        // Always send image field - either with data or empty string
-        if (data.image && data.image.trim() !== "") {
-            try {
-                console.log("🖼️ Processing image data...", {
-                    imageLength: data.image.length,
-                    isBase64: data.image.startsWith("data:"),
-                });
-
-                // Convert base64 to blob
-                const response = await fetch(data.image);
-                const blob = await response.blob();
-                formData.append("image", blob, "announcement-image.png");
-
-                console.log("✅ Image converted and appended:", {
-                    blobSize: blob.size,
-                    blobType: blob.type,
-                });
-            } catch (imageError) {
-                console.error("💥 Failed to process image:", imageError);
-                // Send empty string if image processing fails
-                formData.append("image", "");
-                console.log("📝 Appended empty image due to processing error");
+        // Append images - one for each announcement (always as File objects)
+        for (let i = 0; i < data.announcements.length; i++) {
+            const announcement = data.announcements[i];
+            
+            if (announcement.image instanceof File) {
+                // If it's already a File object, append it directly
+                formData.append("images", announcement.image);
+                console.log(`🖼️ Image ${i} appended as File:`, announcement.image.name);
+            } else if (typeof announcement.image === "string" && announcement.image.startsWith("data:")) {
+                // If it's a base64 string, convert to File (not blob)
+                try {
+                    const response = await fetch(announcement.image);
+                    const blob = await response.blob();
+                    // Always create a File object, never append blob directly
+                    const file = new File([blob], `announcement-${i}.png`, { 
+                        type: blob.type || 'image/png' 
+                    });
+                    formData.append("images", file);
+                    console.log(`🖼️ Image ${i} converted from base64 to File and appended`);
+                } catch (imageError) {
+                    console.error(`💥 Failed to process image ${i}:`, imageError);
+                    // Append empty File as placeholder (not blob)
+                    formData.append("images", new File([], "", { type: 'application/octet-stream' }));
+                }
+            } else {
+                // No new image - append empty File as placeholder (not blob)
+                formData.append("images", new File([], "", { type: 'application/octet-stream' }));
+                console.log(`📝 Image ${i} is existing URL, appended empty File placeholder`);
             }
-        } else {
-            // Send empty string when no image
-            formData.append("image", "");
-            console.log("📝 No image provided, appended empty string");
         }
 
         console.log("🌐 Sending request to backend...");
 
-        // Log FormData contents for debugging
-        console.log("📋 FormData contents:");
-        for (let [key, value] of formData.entries()) {
-            if (key === "image" && value instanceof Blob) {
-                console.log(
-                    `  ${key}: Blob (${value.size} bytes, ${value.type})`,
-                );
-            } else {
-                console.log(`  ${key}:`, value);
-            }
-        }
-
         // Use instance instead of axios directly (to match your setup)
-        const response = await instance.post<CreateAnnouncementResponse>(
+        const response = await instance.post<{ message: string; data: CreateAnnouncementResponse[] }>(
             "http://localhost:4000/announcements",
             // https://biva-bakery-backend.onrender.com/announcements
             formData,
@@ -164,7 +158,7 @@ const createAnnouncementAPI = async (
         );
 
         console.log("🎉 Backend response received:", response.data);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error("💥 API Error occurred:", error);
 
@@ -209,9 +203,9 @@ export const useCreateAnnouncement = () => {
     const queryClient = useQueryClient();
 
     return useMutation<
-        CreateAnnouncementResponse,
+        CreateAnnouncementResponse[],
         ApiError,
-        CreateAnnouncementRequest
+        CreateAnnouncementsRequest
     >({
         mutationFn: createAnnouncementAPI,
         onSuccess: (data) => {
@@ -219,11 +213,11 @@ export const useCreateAnnouncement = () => {
             queryClient.invalidateQueries({ queryKey: ["announcements"] });
 
             // You can add any success side effects here
-            console.log("✅ Announcement created successfully:", data);
+            console.log("✅ Announcements created successfully:", data);
         },
         onError: (error: ApiError) => {
             // You can add any error side effects here
-            console.error("❌ Failed to create announcement:", {
+            console.error("❌ Failed to create announcements:", {
                 message: error.message,
                 statusCode: error.statusCode,
                 details: error.details,
