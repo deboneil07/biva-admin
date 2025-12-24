@@ -729,13 +729,6 @@ export default function AnnouncementsPage() {
         (e: React.ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
             if (file) {
-                console.log(
-                    "📎 File selected:",
-                    file.name,
-                    file.type,
-                    file.size,
-                );
-                // Store the actual File object directly
                 setLocalForms((prev) =>
                     prev.map((f, idx) =>
                         idx === activeTab
@@ -786,39 +779,23 @@ export default function AnnouncementsPage() {
     };
 
     const handleAnnounce = () => {
-        // Prepare announcements array in the format expected by the hook
         const announcements = forms.map(
-            ({ title, body, displayType, styling, image }) => {
-                console.log(`📤 Preparing ${displayType}:`, {
-                    title,
-                    hasImage: !!image,
-                    imageType: typeof image,
-                    isFile: image instanceof File,
-                    fileName: image instanceof File ? image.name : "not a file",
-                });
-
-                return {
-                    title,
-                    body,
-                    displayType,
-                    styling,
-                    image, // Can be File object or existing URL string
-                };
-            },
+            ({ title, body, displayType, styling, image }) => ({
+                title,
+                body,
+                displayType,
+                styling,
+                image,
+            }),
         );
 
-        console.log("🚀 Sending announcements:", announcements);
-
-        // Call the mutation with the correct payload structure
         createAnnouncementMutation.mutate(
             { announcements },
             {
                 onSuccess: () => {
-                    // Logic after successful creation (e.g., reset forms or show toast)
                     console.log("Announcements created successfully!");
                 },
                 onError: (error) => {
-                    // Logic for handling errors
                     console.error("Failed to create announcements:", error);
                 },
             },
