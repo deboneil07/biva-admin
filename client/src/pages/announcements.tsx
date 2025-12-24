@@ -72,7 +72,8 @@ interface Announcement {
     title: string;
     body: string;
     displayType: "banner" | "modal" | "popup" | "notification";
-    image?: string;
+    image?: string | File; // Can be URL string or File object
+    imagePreview?: string; // For displaying preview in UI
     styling: {
         backgroundColor: string;
         textColor: string;
@@ -728,11 +729,15 @@ export default function AnnouncementsPage() {
         (e: React.ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    updateLocalForm("image", reader.result as string);
-                };
-                reader.readAsDataURL(file);
+                console.log("📎 File selected:", file.name, file.type, file.size);
+                // Store the actual File object directly
+                setLocalForms((prev) =>
+                    prev.map((f, idx) =>
+                        idx === activeTab
+                            ? { ...f, image: file, imagePreview: URL.createObjectURL(file) }
+                            : f
+                    )
+                );
             }
         },
         [activeTab],
@@ -740,6 +745,11 @@ export default function AnnouncementsPage() {
 
     const removeImage = useCallback(() => {
         updateLocalForm("image", "");
+        setLocalForms((prev) =>
+            prev.map((f, idx) =>
+                idx === activeTab ? { ...f, imagePreview: "" } : f
+            )
+        );
     }, [activeTab]);
 
     const refreshIframe = useCallback(() => {
@@ -767,18 +777,30 @@ export default function AnnouncementsPage() {
     };
 
     const handleAnnounce = () => {
-        const payload = forms.map(({ title, body, displayType, styling }) => ({
-            title,
-            body,
-            displayType,
-            styling,
-        }));
+        // Prepare announcements array in the format expected by the hook
+        const announcements = forms.map(({ title, body, displayType, styling, image }) => {
+            console.log(`📤 Preparing ${displayType}:`, {
+                title,
+                hasImage: !!image,
+                imageType: typeof image,
+                isFile: image instanceof File,
+                fileName: image instanceof File ? image.name : 'not a file'
+            });
+            
+            return {
+                title,
+                body,
+                displayType,
+                styling,
+                image, // Can be File object or existing URL string
+            };
+        });
 
-        const images = forms.map(({ image }) => image || "");
+        console.log("🚀 Sending announcements:", announcements);
 
-        // 2. Call the mutation once with the prepared payload
+        // Call the mutation with the correct payload structure
         createAnnouncementMutation.mutate(
-            { payload, images },
+            { announcements },
             {
                 onSuccess: () => {
                     // Logic after successful creation (e.g., reset forms or show toast)
@@ -817,7 +839,7 @@ export default function AnnouncementsPage() {
     const announcementData: AnnouncementData = {
         title: localForms[activeTab].title || "",
         body: localForms[activeTab].body || "",
-        image: localForms[activeTab].image,
+        image: localForms[activeTab].imagePreview || (typeof localForms[activeTab].image === 'string' ? localForms[activeTab].image : undefined),
         styling: previewStyle,
     };
 
@@ -1039,11 +1061,12 @@ export default function AnnouncementsPage() {
 
                                 <div>
                                     <Label>Image (Optional)</Label>
-                                    {localForms[activeTab].image ? (
+                                    {(localForms[activeTab].image || localForms[activeTab].imagePreview) ? (
                                         <div className="relative mt-1">
                                             <img
                                                 src={
-                                                    localForms[activeTab].image
+                                                    localForms[activeTab].imagePreview || 
+                                                    (typeof localForms[activeTab].image === 'string' ? localForms[activeTab].image : '')
                                                 }
                                                 alt="Preview"
                                                 className="w-full h-32 object-cover rounded border"
