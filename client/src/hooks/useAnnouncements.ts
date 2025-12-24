@@ -153,7 +153,8 @@ const createAnnouncementAPI = async (
 
         // Use instance instead of axios directly (to match your setup)
         const response = await instance.post<CreateAnnouncementResponse>(
-            "https://biva-bakery-backend.onrender.com/announcements",
+            "http://localhost:4000/announcements",
+            // https://biva-bakery-backend.onrender.com/announcements
             formData,
             {
                 headers: {
