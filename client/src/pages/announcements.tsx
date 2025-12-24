@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
     Card,
     CardHeader,
@@ -32,6 +32,7 @@ import {
     CheckCircle,
     AlertCircle,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import {
     useCreateAnnouncement,
     useDeleteAnnouncement,
@@ -40,7 +41,7 @@ import {
 
 // Textarea component
 interface TextareaProps
-    extends React.TextareaHTMLAttributes<HTMLTextAreaElement> { }
+    extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
 
 function Textarea({ className, ...props }: TextareaProps) {
     return (
@@ -107,8 +108,8 @@ export const BannerTemplate: React.FC<AnnouncementData> = ({
             styling.fontSize === "sm"
                 ? "14px"
                 : styling.fontSize === "lg"
-                    ? "18px"
-                    : "16px",
+                  ? "18px"
+                  : "16px",
     };
 
     return (
@@ -156,8 +157,8 @@ export const ModalTemplate: React.FC<AnnouncementData> = ({
             styling.fontSize === "sm"
                 ? "14px"
                 : styling.fontSize === "lg"
-                    ? "18px"
-                    : "16px",
+                  ? "18px"
+                  : "16px",
     };
 
     return (
@@ -232,8 +233,8 @@ export const NotificationTemplate: React.FC<AnnouncementData> = ({
             styling.fontSize === "sm"
                 ? "14px"
                 : styling.fontSize === "lg"
-                    ? "18px"
-                    : "16px",
+                  ? "18px"
+                  : "16px",
         borderLeftColor: styling.borderColor || "#3b82f6",
     };
 
@@ -280,8 +281,8 @@ export const PopupTemplate: React.FC<AnnouncementData> = ({
             styling.fontSize === "sm"
                 ? "14px"
                 : styling.fontSize === "lg"
-                    ? "18px"
-                    : "16px",
+                  ? "18px"
+                  : "16px",
     };
 
     return (
@@ -354,8 +355,18 @@ PreviewBanner.displayName = "PreviewBanner";
 const PreviewModal = React.memo((props: AnnouncementData) => {
     if (!props.title) return null;
 
-    const fontSize = props.styling.fontSize === "sm" ? "14px" : props.styling.fontSize === "lg" ? "20px" : "16px";
-    const titleSize = props.styling.fontSize === "sm" ? "18px" : props.styling.fontSize === "lg" ? "24px" : "20px";
+    const fontSize =
+        props.styling.fontSize === "sm"
+            ? "14px"
+            : props.styling.fontSize === "lg"
+              ? "20px"
+              : "16px";
+    const titleSize =
+        props.styling.fontSize === "sm"
+            ? "18px"
+            : props.styling.fontSize === "lg"
+              ? "24px"
+              : "20px";
 
     return (
         <div className="absolute inset-0 z-50">
@@ -368,7 +379,10 @@ const PreviewModal = React.memo((props: AnnouncementData) => {
                     }}
                 >
                     {/* Header with close button */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: `${props.styling.textColor}15` }}>
+                    <div
+                        className="flex items-center justify-between px-6 py-4 border-b"
+                        style={{ borderColor: `${props.styling.textColor}15` }}
+                    >
                         <h4
                             className="font-bold tracking-tight"
                             style={{
@@ -387,8 +401,12 @@ const PreviewModal = React.memo((props: AnnouncementData) => {
                                     backgroundColor: `${props.styling.textColor}00`,
                                     color: props.styling.textColor,
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${props.styling.textColor}15`}
-                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = `${props.styling.textColor}00`}
+                                onMouseEnter={(e) =>
+                                    (e.currentTarget.style.backgroundColor = `${props.styling.textColor}15`)
+                                }
+                                onMouseLeave={(e) =>
+                                    (e.currentTarget.style.backgroundColor = `${props.styling.textColor}00`)
+                                }
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -456,8 +474,14 @@ const PreviewNotification = React.memo((props: AnnouncementData) => {
                         style={{
                             backgroundColor: props.styling.backgroundColor,
                             color: props.styling.textColor,
-                            borderLeftColor: props.styling.borderColor || "#3b82f6",
-                            fontSize: props.styling.fontSize === "sm" ? "14px" : props.styling.fontSize === "lg" ? "18px" : "16px"
+                            borderLeftColor:
+                                props.styling.borderColor || "#3b82f6",
+                            fontSize:
+                                props.styling.fontSize === "sm"
+                                    ? "14px"
+                                    : props.styling.fontSize === "lg"
+                                      ? "18px"
+                                      : "16px",
                         }}
                     >
                         <div className="flex items-start gap-3">
@@ -466,7 +490,9 @@ const PreviewNotification = React.memo((props: AnnouncementData) => {
                                 <h4 className="font-medium text-sm mb-1 truncate">
                                     {props.title}
                                 </h4>
-                                <p className="text-sm line-clamp-3">{props.body}</p>
+                                <p className="text-sm line-clamp-3">
+                                    {props.body}
+                                </p>
                             </div>
                             {props.onClose && (
                                 <X
@@ -487,8 +513,18 @@ PreviewNotification.displayName = "PreviewNotification";
 const PreviewPopup = React.memo((props: AnnouncementData) => {
     if (!props.title) return null;
 
-    const fontSize = props.styling.fontSize === "sm" ? "13px" : props.styling.fontSize === "lg" ? "16px" : "14px";
-    const titleSize = props.styling.fontSize === "sm" ? "15px" : props.styling.fontSize === "lg" ? "18px" : "16px";
+    const fontSize =
+        props.styling.fontSize === "sm"
+            ? "13px"
+            : props.styling.fontSize === "lg"
+              ? "16px"
+              : "14px";
+    const titleSize =
+        props.styling.fontSize === "sm"
+            ? "15px"
+            : props.styling.fontSize === "lg"
+              ? "18px"
+              : "16px";
 
     return (
         <div className="absolute inset-0 z-50 pointer-events-none">
@@ -504,8 +540,18 @@ const PreviewPopup = React.memo((props: AnnouncementData) => {
                         {/* Header */}
                         <div className="flex items-start justify-between px-5 pt-4 pb-3">
                             <div className="flex items-start gap-3 flex-1">
-                                <div className="rounded-full p-2 mt-0.5" style={{ backgroundColor: `${props.styling.textColor}15` }}>
-                                    <Bell className="w-4 h-4" style={{ color: props.styling.textColor }} />
+                                <div
+                                    className="rounded-full p-2 mt-0.5"
+                                    style={{
+                                        backgroundColor: `${props.styling.textColor}15`,
+                                    }}
+                                >
+                                    <Bell
+                                        className="w-4 h-4"
+                                        style={{
+                                            color: props.styling.textColor,
+                                        }}
+                                    />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h4
@@ -528,8 +574,12 @@ const PreviewPopup = React.memo((props: AnnouncementData) => {
                                         backgroundColor: `${props.styling.textColor}00`,
                                         color: props.styling.textColor,
                                     }}
-                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${props.styling.textColor}15`}
-                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = `${props.styling.textColor}00`}
+                                    onMouseEnter={(e) =>
+                                        (e.currentTarget.style.backgroundColor = `${props.styling.textColor}15`)
+                                    }
+                                    onMouseLeave={(e) =>
+                                        (e.currentTarget.style.backgroundColor = `${props.styling.textColor}00`)
+                                    }
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -576,79 +626,103 @@ export default function AnnouncementsPage() {
     >("desktop");
     const [iframeRefreshKey, setIframeRefreshKey] = useState(0);
 
-    const [formData, setFormData] = useState<Partial<Announcement>>({
-        title: "",
-        body: "",
-        displayType: "banner",
-        styling: { ...defaultStyling },
-    });
+    // Announcement types and tab order
+    const announcementTypes = [
+        { type: "banner", label: "Banner" },
+        { type: "modal", label: "Modal" },
+        { type: "notification", label: "Notification" },
+        { type: "popup", label: "Popup" },
+    ] as const;
 
-    // Use the TanStack Query mutation hook
-    const createAnnouncementMutation = useCreateAnnouncement();
-    const deleteAnnouncementMutation = useDeleteAnnouncement();
-
-    const handleDelete = () => {
-        if (window.confirm("Are you sure you want to delete the active announcement?")) {
-            deleteAnnouncementMutation.mutate(undefined, {
-                onSuccess: () => {
-                    handleReset();
-                },
-            });
-        }
-    };
-
-    const handleSave = () => {
-        if (!formData.title || !formData.body) return;
-
-        const requestData: CreateAnnouncementRequest = {
-            title: formData.title,
-            body: formData.body,
-            displayType: formData.displayType || "banner",
-            image: formData.image, // This is the base64 string from your image upload
-            styling: formData.styling || defaultStyling,
-        };
-
-        createAnnouncementMutation.mutate(requestData, {
-            onSuccess: (response) => {
-                console.log("Announcement saved successfully:", response);
-                // Optionally reset the form
-                handleReset();
-            },
-            onError: (error) => {
-                console.error("Failed to save announcement:", error.message);
-                // Handle error (show toast, etc.)
-            },
-        });
-    };
-
-    const handleReset = () => {
-        setFormData({
+    // State: array of 4 forms, one per type
+    const [forms, setForms] = useState<Announcement[]>(() =>
+        announcementTypes.map((t) => ({
+            id: "",
             title: "",
             body: "",
-            displayType: "banner",
+            displayType: t.type,
+            image: "",
             styling: { ...defaultStyling },
-        });
+        })),
+    );
+    // Track which tab is active
+    const [activeTab, setActiveTab] = useState(0);
+
+    // TanStack Query for fetching existing announcements
+    const { data: existing, isLoading: isLoadingExisting } = useQuery({
+        queryKey: ["announcements", "all"],
+        queryFn: async () => {
+            // Replace with your actual fetch logic
+            const res = await fetch("/api/announcements");
+            if (!res.ok) throw new Error("Failed to fetch");
+            return res.json();
+        },
+        staleTime: 1000 * 60 * 5,
+    });
+
+    // On mount or when existing changes, prefill forms
+    useEffect(() => {
+        if (existing && Array.isArray(existing)) {
+            setForms((prev) =>
+                announcementTypes.map((t, idx) => {
+                    const found = existing.find(
+                        (a: Announcement) => a.displayType === t.type,
+                    );
+                    return found
+                        ? { ...prev[idx], ...found }
+                        : { ...prev[idx], displayType: t.type };
+                }),
+            );
+        }
+    }, [existing]);
+
+    // Mutations for sending all announcements
+    const createAnnouncementMutation = useCreateAnnouncement();
+
+    // Local "set" for each tab
+    const [localForms, setLocalForms] = useState<Announcement[]>(() =>
+        announcementTypes.map((t) => ({
+            id: "",
+            title: "",
+            body: "",
+            displayType: t.type,
+            image: "",
+            styling: { ...defaultStyling },
+        })),
+    );
+
+    // On tab change, sync local form with main form
+    useEffect(() => {
+        setLocalForms(forms);
+    }, [forms]);
+
+    // Update local form for active tab
+    const updateLocalForm = (field: keyof Announcement, value: any) => {
+        setLocalForms((prev) =>
+            prev.map((f, idx) =>
+                idx === activeTab ? { ...f, [field]: value } : f,
+            ),
+        );
     };
 
-    const updateFormData = useCallback(
-        (field: keyof Announcement, value: any) => {
-            setFormData((prev) => ({ ...prev, [field]: value }));
-        },
-        [],
-    );
-
-    const updateStyling = useCallback(
-        (field: keyof Announcement["styling"], value: any) => {
-            setFormData((prev) => ({
-                ...prev,
-                styling: {
-                    ...(prev.styling || defaultStyling),
-                    [field]: value
-                } as Announcement["styling"],
-            }));
-        },
-        [],
-    );
+    const updateLocalStyling = (
+        field: keyof Announcement["styling"],
+        value: any,
+    ) => {
+        setLocalForms((prev) =>
+            prev.map((f, idx) =>
+                idx === activeTab
+                    ? {
+                          ...f,
+                          styling: {
+                              ...(f.styling || defaultStyling),
+                              [field]: value,
+                          },
+                      }
+                    : f,
+            ),
+        );
+    };
 
     const handleImageUpload = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -656,17 +730,17 @@ export default function AnnouncementsPage() {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = () => {
-                    updateFormData("image", reader.result as string);
+                    updateLocalForm("image", reader.result as string);
                 };
                 reader.readAsDataURL(file);
             }
         },
-        [updateFormData],
+        [activeTab],
     );
 
     const removeImage = useCallback(() => {
-        updateFormData("image", "");
-    }, [updateFormData]);
+        updateLocalForm("image", "");
+    }, [activeTab]);
 
     const refreshIframe = useCallback(() => {
         setIframeRefreshKey((prev) => prev + 1);
@@ -683,29 +757,57 @@ export default function AnnouncementsPage() {
         }
     };
 
+    // "Set" button: update main forms array with local form for active tab
+    const handleSet = () => {
+        setForms((prev) =>
+            prev.map((f, idx) =>
+                idx === activeTab ? localForms[activeTab] : f,
+            ),
+        );
+    };
+
+    // "Announce" button: send all forms at once
+    const handleAnnounce = () => {
+        createAnnouncementMutation.mutate(forms, {
+            onSuccess: () => {
+                // Optionally reset forms or show success
+            },
+        });
+    };
+
+    // Preview data for active tab
     const previewStyle = useMemo(
         (): Announcement["styling"] => ({
             backgroundColor:
-                formData.styling?.backgroundColor ||
+                localForms[activeTab].styling?.backgroundColor ||
                 defaultStyling.backgroundColor,
-            textColor: formData.styling?.textColor || defaultStyling.textColor,
+            textColor:
+                localForms[activeTab].styling?.textColor ||
+                defaultStyling.textColor,
             borderColor:
-                formData.styling?.borderColor || defaultStyling.borderColor,
-            fontSize: formData.styling?.fontSize || defaultStyling.fontSize,
-            alignment: formData.styling?.alignment || defaultStyling.alignment,
+                localForms[activeTab].styling?.borderColor ||
+                defaultStyling.borderColor,
+            fontSize:
+                localForms[activeTab].styling?.fontSize ||
+                defaultStyling.fontSize,
+            alignment:
+                localForms[activeTab].styling?.alignment ||
+                defaultStyling.alignment,
         }),
-        [formData.styling],
+        [localForms, activeTab],
     );
 
     const announcementData: AnnouncementData = {
-        title: formData.title || "",
-        body: formData.body || "",
-        image: formData.image,
+        title: localForms[activeTab].title || "",
+        body: localForms[activeTab].body || "",
+        image: localForms[activeTab].image,
         styling: previewStyle,
     };
 
+    // Preview section for active tab
     const PreviewSection = React.memo(() => {
         const dimensions = getDeviceDimensions();
+        const displayType = announcementTypes[activeTab].type;
 
         return (
             <div className="space-y-4">
@@ -778,13 +880,13 @@ export default function AnnouncementsPage() {
                                 className="w-full h-full"
                                 style={{
                                     marginTop:
-                                        formData.title &&
-                                            formData.displayType === "banner"
+                                        localForms[activeTab].title &&
+                                        displayType === "banner"
                                             ? "80px"
                                             : "0",
                                     height:
-                                        formData.title &&
-                                            formData.displayType === "banner"
+                                        localForms[activeTab].title &&
+                                        displayType === "banner"
                                             ? "calc(100% - 80px)"
                                             : "100%",
                                 }}
@@ -793,19 +895,19 @@ export default function AnnouncementsPage() {
                             </div>
 
                             {/* Announcement Overlays */}
-                            {formData.displayType === "banner" && (
+                            {displayType === "banner" && (
                                 <PreviewBanner {...announcementData} />
                             )}
 
-                            {formData.displayType === "modal" && (
+                            {displayType === "modal" && (
                                 <PreviewModal {...announcementData} />
                             )}
 
-                            {formData.displayType === "notification" && (
+                            {displayType === "notification" && (
                                 <PreviewNotification {...announcementData} />
                             )}
 
-                            {formData.displayType === "popup" && (
+                            {displayType === "popup" && (
                                 <PreviewPopup {...announcementData} />
                             )}
                         </div>
@@ -826,7 +928,7 @@ export default function AnnouncementsPage() {
     return (
         <div className="flex flex-1 min-h-screen">
             <div className="flex flex-1 gap-6 p-6">
-                {/* Left Panel - Form */}
+                {/* Left Panel - Tabs and Form */}
                 <div className="flex-1 max-w-lg">
                     <div className="space-y-6">
                         <div>
@@ -838,9 +940,28 @@ export default function AnnouncementsPage() {
                             </p>
                         </div>
 
+                        {/* Tabs */}
+                        <div className="flex mb-4 border-b">
+                            {announcementTypes.map((t, idx) => (
+                                <button
+                                    key={t.type}
+                                    className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+                                        activeTab === idx
+                                            ? "border-primary text-primary"
+                                            : "border-transparent text-muted-foreground"
+                                    }`}
+                                    onClick={() => setActiveTab(idx)}
+                                    type="button"
+                                >
+                                    {t.label}
+                                </button>
+                            ))}
+                        </div>
+
                         <Card>
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-lg">
+                                    {announcementTypes[activeTab].label}{" "}
                                     Announcement
                                 </CardTitle>
                             </CardHeader>
@@ -850,7 +971,7 @@ export default function AnnouncementsPage() {
                                     <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md text-green-700">
                                         <CheckCircle className="w-4 h-4" />
                                         <span className="text-sm">
-                                            Announcement created successfully!
+                                            Announcements sent successfully!
                                         </span>
                                     </div>
                                 )}
@@ -861,27 +982,7 @@ export default function AnnouncementsPage() {
                                         <span className="text-sm">
                                             {createAnnouncementMutation.error
                                                 ?.message ||
-                                                "Failed to create announcement"}
-                                        </span>
-                                    </div>
-                                )}
-
-                                {deleteAnnouncementMutation.isSuccess && (
-                                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md text-green-700">
-                                        <CheckCircle className="w-4 h-4" />
-                                        <span className="text-sm">
-                                            Announcement deleted successfully!
-                                        </span>
-                                    </div>
-                                )}
-
-                                {deleteAnnouncementMutation.isError && (
-                                    <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
-                                        <AlertCircle className="w-4 h-4" />
-                                        <span className="text-sm">
-                                            {deleteAnnouncementMutation.error
-                                                ?.message ||
-                                                "Failed to delete announcement"}
+                                                "Failed to send announcements"}
                                         </span>
                                     </div>
                                 )}
@@ -890,18 +991,16 @@ export default function AnnouncementsPage() {
                                     <Label htmlFor="title">Title</Label>
                                     <Input
                                         id="title"
-                                        value={formData.title || ""}
+                                        value={
+                                            localForms[activeTab].title || ""
+                                        }
                                         onChange={(e) =>
-                                            updateFormData(
+                                            updateLocalForm(
                                                 "title",
                                                 e.target.value,
                                             )
                                         }
                                         placeholder="Enter title"
-                                        className="mt-1"
-                                        disabled={
-                                            createAnnouncementMutation.isPending
-                                        }
                                     />
                                 </div>
 
@@ -909,60 +1008,26 @@ export default function AnnouncementsPage() {
                                     <Label htmlFor="body">Message</Label>
                                     <Textarea
                                         id="body"
-                                        value={formData.body || ""}
+                                        value={localForms[activeTab].body || ""}
                                         onChange={(e) =>
-                                            updateFormData(
+                                            updateLocalForm(
                                                 "body",
                                                 e.target.value,
                                             )
                                         }
                                         placeholder="Enter your message"
                                         className="mt-1 min-h-[100px]"
-                                        disabled={
-                                            createAnnouncementMutation.isPending
-                                        }
                                     />
                                 </div>
 
                                 <div>
-                                    <Label htmlFor="displayType">
-                                        Display Type
-                                    </Label>
-                                    <Select
-                                        value={formData.displayType || "banner"}
-                                        onValueChange={(value) =>
-                                            updateFormData("displayType", value)
-                                        }
-                                        disabled={
-                                            createAnnouncementMutation.isPending
-                                        }
-                                    >
-                                        <SelectTrigger className="mt-1">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="banner">
-                                                Banner
-                                            </SelectItem>
-                                            <SelectItem value="modal">
-                                                Modal
-                                            </SelectItem>
-                                            <SelectItem value="popup">
-                                                Popup
-                                            </SelectItem>
-                                            <SelectItem value="notification">
-                                                Notification
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div>
                                     <Label>Image (Optional)</Label>
-                                    {formData.image ? (
+                                    {localForms[activeTab].image ? (
                                         <div className="relative mt-1">
                                             <img
-                                                src={formData.image}
+                                                src={
+                                                    localForms[activeTab].image
+                                                }
                                                 alt="Preview"
                                                 className="w-full h-32 object-cover rounded border"
                                             />
@@ -971,9 +1036,6 @@ export default function AnnouncementsPage() {
                                                 size="sm"
                                                 onClick={removeImage}
                                                 className="absolute top-2 right-2"
-                                                disabled={
-                                                    createAnnouncementMutation.isPending
-                                                }
                                             >
                                                 <Trash className="w-3 h-3" />
                                             </Button>
@@ -985,13 +1047,10 @@ export default function AnnouncementsPage() {
                                                 accept="image/*"
                                                 onChange={handleImageUpload}
                                                 className="hidden"
-                                                id="image-upload"
-                                                disabled={
-                                                    createAnnouncementMutation.isPending
-                                                }
+                                                id={`image-upload-${activeTab}`}
                                             />
                                             <Label
-                                                htmlFor="image-upload"
+                                                htmlFor={`image-upload-${activeTab}`}
                                                 className="cursor-pointer flex flex-col items-center gap-2"
                                             >
                                                 <Upload className="w-6 h-6 text-muted-foreground" />
@@ -1014,38 +1073,34 @@ export default function AnnouncementsPage() {
                                                 <Input
                                                     type="color"
                                                     value={
-                                                        formData.styling
+                                                        localForms[activeTab]
+                                                            .styling
                                                             ?.backgroundColor ||
                                                         defaultStyling.backgroundColor
                                                     }
                                                     onChange={(e) =>
-                                                        updateStyling(
+                                                        updateLocalStyling(
                                                             "backgroundColor",
                                                             e.target.value,
                                                         )
                                                     }
                                                     className="w-10 h-8 p-1"
-                                                    disabled={
-                                                        createAnnouncementMutation.isPending
-                                                    }
                                                 />
                                                 <Input
                                                     value={
-                                                        formData.styling
+                                                        localForms[activeTab]
+                                                            .styling
                                                             ?.backgroundColor ||
                                                         defaultStyling.backgroundColor
                                                     }
                                                     onChange={(e) =>
-                                                        updateStyling(
+                                                        updateLocalStyling(
                                                             "backgroundColor",
                                                             e.target.value,
                                                         )
                                                     }
                                                     className="flex-1 text-xs font-mono"
                                                     placeholder="#ffffff"
-                                                    disabled={
-                                                        createAnnouncementMutation.isPending
-                                                    }
                                                 />
                                             </div>
                                         </div>
@@ -1057,38 +1112,34 @@ export default function AnnouncementsPage() {
                                                 <Input
                                                     type="color"
                                                     value={
-                                                        formData.styling
+                                                        localForms[activeTab]
+                                                            .styling
                                                             ?.textColor ||
                                                         defaultStyling.textColor
                                                     }
                                                     onChange={(e) =>
-                                                        updateStyling(
+                                                        updateLocalStyling(
                                                             "textColor",
                                                             e.target.value,
                                                         )
                                                     }
                                                     className="w-10 h-8 p-1"
-                                                    disabled={
-                                                        createAnnouncementMutation.isPending
-                                                    }
                                                 />
                                                 <Input
                                                     value={
-                                                        formData.styling
+                                                        localForms[activeTab]
+                                                            .styling
                                                             ?.textColor ||
                                                         defaultStyling.textColor
                                                     }
                                                     onChange={(e) =>
-                                                        updateStyling(
+                                                        updateLocalStyling(
                                                             "textColor",
                                                             e.target.value,
                                                         )
                                                     }
                                                     className="flex-1 text-xs font-mono"
                                                     placeholder="#000000"
-                                                    disabled={
-                                                        createAnnouncementMutation.isPending
-                                                    }
                                                 />
                                             </div>
                                         </div>
@@ -1100,17 +1151,15 @@ export default function AnnouncementsPage() {
                                             </Label>
                                             <Select
                                                 value={
-                                                    formData.styling
-                                                        ?.fontSize || "md"
+                                                    localForms[activeTab]
+                                                        .styling?.fontSize ||
+                                                    "md"
                                                 }
                                                 onValueChange={(value) =>
-                                                    updateStyling(
+                                                    updateLocalStyling(
                                                         "fontSize",
                                                         value,
                                                     )
-                                                }
-                                                disabled={
-                                                    createAnnouncementMutation.isPending
                                                 }
                                             >
                                                 <SelectTrigger className="mt-1 h-8">
@@ -1135,17 +1184,15 @@ export default function AnnouncementsPage() {
                                             </Label>
                                             <Select
                                                 value={
-                                                    formData.styling
-                                                        ?.alignment || "center"
+                                                    localForms[activeTab]
+                                                        .styling?.alignment ||
+                                                    "center"
                                                 }
                                                 onValueChange={(value) =>
-                                                    updateStyling(
+                                                    updateLocalStyling(
                                                         "alignment",
                                                         value,
                                                     )
-                                                }
-                                                disabled={
-                                                    createAnnouncementMutation.isPending
                                                 }
                                             >
                                                 <SelectTrigger className="mt-1 h-8">
@@ -1169,49 +1216,15 @@ export default function AnnouncementsPage() {
                             </CardContent>
                             <CardFooter className="gap-2 pt-4">
                                 <Button
-                                    onClick={handleSave}
+                                    onClick={handleSet}
                                     className="flex-1"
                                     disabled={
-                                        createAnnouncementMutation.isPending ||
-                                        !formData.title ||
-                                        !formData.body
+                                        !localForms[activeTab].title ||
+                                        !localForms[activeTab].body
                                     }
                                 >
-                                    {createAnnouncementMutation.isPending ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Creating...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Save className="w-4 h-4 mr-2" />
-                                            Save
-                                        </>
-                                    )}
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={handleReset}
-                                    disabled={
-                                        createAnnouncementMutation.isPending ||
-                                        deleteAnnouncementMutation.isPending
-                                    }
-                                >
-                                    <RotateCcw className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                    variant="destructive"
-                                    onClick={handleDelete}
-                                    disabled={
-                                        createAnnouncementMutation.isPending ||
-                                        deleteAnnouncementMutation.isPending
-                                    }
-                                >
-                                    {deleteAnnouncementMutation.isPending ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <Trash className="w-4 h-4" />
-                                    )}
+                                    <Save className="w-4 h-4 mr-2" />
+                                    Set
                                 </Button>
                             </CardFooter>
                         </Card>
@@ -1224,6 +1237,27 @@ export default function AnnouncementsPage() {
                         <PreviewSection />
                     </div>
                 </div>
+            </div>
+            {/* Announce Button */}
+            <div className="fixed bottom-8 right-8 z-50">
+                <Button
+                    size="lg"
+                    className="shadow-lg"
+                    onClick={handleAnnounce}
+                    disabled={createAnnouncementMutation.isPending}
+                >
+                    {createAnnouncementMutation.isPending ? (
+                        <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Announcing...
+                        </>
+                    ) : (
+                        <>
+                            <Bell className="w-4 h-4 mr-2" />
+                            Announce
+                        </>
+                    )}
+                </Button>
             </div>
         </div>
     );
