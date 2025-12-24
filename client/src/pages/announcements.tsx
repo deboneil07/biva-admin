@@ -766,23 +766,19 @@ export default function AnnouncementsPage() {
         );
     };
 
-
     const handleAnnounce = () => {
-     
-        const announcements = forms.map(
-            ({ title, body, displayType, styling }) => ({
-                title,
-                body,
-                displayType,
-                styling,
-            }),
-        );
+        const payload = forms.map(({ title, body, displayType, styling }) => ({
+            title,
+            body,
+            displayType,
+            styling,
+        }));
 
         const images = forms.map(({ image }) => image || "");
 
         // 2. Call the mutation once with the prepared payload
         createAnnouncementMutation.mutate(
-            { announcements, images },
+            { payload, images },
             {
                 onSuccess: () => {
                     // Logic after successful creation (e.g., reset forms or show toast)
