@@ -766,13 +766,34 @@ export default function AnnouncementsPage() {
         );
     };
 
-    // "Announce" button: send all forms at once
+
     const handleAnnounce = () => {
-        createAnnouncementMutation.mutate(forms, {
-            onSuccess: () => {
-                // Optionally reset forms or show success
+     
+        const announcements = forms.map(
+            ({ title, body, displayType, styling }) => ({
+                title,
+                body,
+                displayType,
+                styling,
+            }),
+        );
+
+        const images = forms.map(({ image }) => image || "");
+
+        // 2. Call the mutation once with the prepared payload
+        createAnnouncementMutation.mutate(
+            { announcements, images },
+            {
+                onSuccess: () => {
+                    // Logic after successful creation (e.g., reset forms or show toast)
+                    console.log("Announcements created successfully!");
+                },
+                onError: (error) => {
+                    // Logic for handling errors
+                    console.error("Failed to create announcements:", error);
+                },
             },
-        });
+        );
     };
 
     // Preview data for active tab
