@@ -93,10 +93,6 @@ const createAnnouncementAPI = async (
             title: announcement.title,
             body: announcement.body,
             displayType: announcement.displayType,
-            image:
-                typeof announcement.image === "string"
-                    ? announcement.image
-                    : "",
             styling: announcement.styling,
         }));
 
@@ -104,7 +100,8 @@ const createAnnouncementAPI = async (
 
         for (let i = 0; i < data.announcements.length; i++) {
             const announcement = data.announcements[i];
-            if (announcement.image instanceof File) {
+            
+            if (announcement.image instanceof File && announcement.image.size > 0) {
                 formData.append("images", announcement.image);
             } else if (
                 typeof announcement.image === "string" &&
@@ -118,10 +115,11 @@ const createAnnouncementAPI = async (
                     });
                     formData.append("images", file);
                 } catch {
-                    // If conversion fails, skip appending
+                    formData.append("images", new File([], ""));
                 }
+            } else {
+                formData.append("images", new File([], ""));
             }
-            // If image is a URL or not provided, do not append anything for this index
         }
 
         const response = await instance.post<{
