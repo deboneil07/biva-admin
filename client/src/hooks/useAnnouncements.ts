@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { instance } from "@/utils/axios";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 
 export interface CreateAnnouncementRequest {
     title: string;
@@ -63,14 +63,12 @@ const deleteAnnouncementAPI = async (): Promise<void> => {
         );
     } catch (error) {
         if (error instanceof AxiosError) {
-            const errorMessage =
-                error.response?.data?.message ||
-                error.response?.data?.error ||
-                error.message ||
-                "Failed to delete announcement";
-
             const apiError: ApiError = {
-                message: errorMessage,
+                message:
+                    error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    error.message ||
+                    "Failed to delete announcement",
                 statusCode: error.response?.status,
                 details: error.response?.data,
             };
@@ -111,7 +109,7 @@ const createAnnouncementAPI = async (
             } else {
                 formData.append(`images[${i}]`, new File([], ""));
             }
-        }
+        });
 
         const response = await instance.post<{
             message: string;
@@ -125,29 +123,24 @@ const createAnnouncementAPI = async (
         return response.data.data;
     } catch (error) {
         if (error instanceof AxiosError) {
-            const errorMessage =
-                error.response?.data?.message ||
-                error.response?.data?.error ||
-                error.message ||
-                "Failed to create announcement";
-
             const apiError: ApiError = {
-                message: errorMessage,
+                message:
+                    error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    error.message ||
+                    "Failed to create announcement",
                 statusCode: error.response?.status,
                 details: error.response?.data,
             };
-
             throw apiError;
         }
 
-        const genericError = {
+        throw {
             message:
                 error instanceof Error
                     ? error.message
                     : "An unknown error occurred",
         } as ApiError;
-
-        throw genericError;
     }
 };
 
