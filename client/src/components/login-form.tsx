@@ -11,18 +11,14 @@ export function LoginForm() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [otp, setOtp] = useState("");
+    const [view, setView] = useState<"login" | "forgot" | "reset">("login");
 
-    const { signIn, signInData, signInError, signInLoading } = useAuth();
+    console.log("LoginForm rendered, current view:", view);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!email || !password) {
-            toast.error("Please fill in all fields");
-            return;
-        }
-        await signIn(email, password);
-    };
+    const { signIn, signInData, signInError, signInLoading, requestPasswordReset, verifyAndResetPassword, resetLoading, resetError } = useAuth();
 
+    // All useEffect hooks must be called before any conditional returns
     useEffect(() => {
         if (signInData) {
             toast.success("Login successful!");
@@ -34,6 +30,80 @@ export function LoginForm() {
             toast.error(signInError.message || "Login failed");
         }
     }, [signInError]);
+
+    const handleForgot = async ( e: React.FormEvent) => {
+        console.log("=== handleForgot START ===");
+        e.preventDefault();
+        console.log('handleForgot called with email:', email);
+        const success = await requestPasswordReset(email);
+        console.log('requestPasswordReset result:', success);
+        if (success) {
+            toast.success("OTP sent to your email");
+            setView("reset");
+        } else {
+            toast.error(resetError?.message || "Failed to send OTP");
+        }
+        console.log("=== handleForgot END ===");
+    }
+
+    const handleReset = async (e: React.FormEvent) => {
+        e.preventDefault();
+        console.log('handleReset called');
+        const success = await verifyAndResetPassword(email, otp, password);
+        console.log('verifyAndResetPassword result:', success);
+        if (success) {
+            toast.success("Password reset successful! Please login.");
+            setView("login");
+            setOtp("");
+            setPassword("");
+        } else {
+            toast.error(resetError?.message || "Failed to reset password");
+        }
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email || !password) {
+            toast.error("Please fill in all fields");
+            return;
+        }
+        await signIn(email, password);
+    };
+
+    // Conditional rendering after all hooks
+    if (view === "forgot") {
+        console.log("Rendering FORGOT PASSWORD form");
+        return (
+            <form className="flex flex-col gap-6" onSubmit={(e) => {
+                console.log("Form submitted!");
+                handleForgot(e);
+            }}>
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold">Forgot Password</h1>
+                    <p className="text-sm text-muted-foreground">Enter email. Admin will receive your code.</p>
+                </div>
+                <Input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
+                <Button type="submit" disabled={resetLoading}>
+                    {resetLoading ? "Sending..." : "Request Code"}
+                </Button>
+                <Button variant="link" type="button" onClick={() => {
+                    console.log("Back to Login clicked");
+                    setView("login");
+                }}>Back to Login</Button>
+            </form>
+        );
+    }
+
+    if (view === "reset") {
+        return (
+            <form className="flex flex-col gap-6" onSubmit={handleReset}>
+                <div className="text-center"><h1 className="text-2xl font-bold">Reset Password</h1></div>
+                <Input placeholder="OTP Code from Admin" value={otp} onChange={e => setOtp(e.target.value)} required />
+                <Input placeholder="New Password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+                <Button type="submit" disabled={resetLoading}>Reset Password</Button>
+            </form>
+        );
+    }
 
     return (
         <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
@@ -95,6 +165,16 @@ export function LoginForm() {
                     {signInLoading && <Spinner />} Login
                 </Button>
             </div>
+            <Button 
+                variant="link" 
+                type="button" 
+                onClick={() => {
+                    console.log("Forgot Password button clicked!");
+                    setView("forgot");
+                }}
+            > 
+                Forgot Password? 
+            </Button>
         </form>
     );
 }
