@@ -58,7 +58,8 @@ export interface ApiError {
 const deleteAnnouncementAPI = async (): Promise<void> => {
     try {
         await instance.delete(
-            "https://biva-bakery-backend.onrender.com/announcements",
+            "/announcements",
+            // https://biva-bakery-backend.onrender.com/announcements
         );
     } catch (error) {
         if (error instanceof AxiosError) {
@@ -115,7 +116,7 @@ const createAnnouncementAPI = async (
         const response = await instance.post<{
             message: string;
             data: CreateAnnouncementResponse[];
-        }>("http://localhost:4000/announcements", formData, {
+        }>("https://biva-bakery-backend.onrender.com/announcements", formData, {
             headers: {
                 "Content-Type": "multipart/form-data",
             },

@@ -16,6 +16,60 @@ export default function useAuth() {
     const [user, setUser] = useState<any>(null);
     const [sessionLoading, sessionSetLoading] = useState<boolean>(false);
 
+    const [resetLoading, setResetLoading] = useState<boolean>(false);
+    const [resetError, setResetError] = useState<any>(null);
+
+    async function requestPasswordReset(email: string) {
+        setResetLoading(true);
+        setResetError(null);
+        console.log('Requesting password reset for:', email);
+
+        try {
+            const { data, error } = await authClient.forgetPassword.emailOtp({
+                email
+            });
+            console.log('Password reset response:', { data, error });
+            if (error) {
+                console.error('Password reset error:', error);
+                setResetError(error);
+                return false;
+            }
+            return true;
+        } catch (err) {
+            console.error('Password reset catch error:', err);
+            setResetError(err);
+            return false;
+        } finally {
+            setResetLoading(false);
+        }
+    }
+
+    async function verifyAndResetPassword(email: string, otp: string, password: string) {
+        setResetLoading(true);
+        setResetError(null);
+        console.log('Verifying OTP and resetting password for:', email);
+
+        try {
+            const { data, error } = await authClient.emailOtp.resetPassword({
+                email,
+                otp,
+                password
+            });
+            console.log('Reset password response:', { data, error });
+            if (error) {
+                console.error('Reset password error:', error);
+                setResetError(error);
+                return false;
+            }
+            return true;
+        } catch(err) {
+            console.error('Reset password catch error:', err);
+            setResetError(err);
+            return false;
+        } finally {
+            setResetLoading(false);
+        }
+    }
 
     async function signIn(email: string, password: string) {
         signInSetLoading(true);
@@ -24,7 +78,7 @@ export default function useAuth() {
             const { data, error } = await authClient.signIn.email({
                 email: email,
                 password: password,
-                callbackURL: 'http://localhost:5174/dashboard',
+                callbackURL: 'https://biva-admin.onrender.com/dashboard',
                 // 'https://biva-admin.onrender.com/dashboard'
             })
             data ? signInSetData(data) : signInSetError(error);
@@ -76,7 +130,12 @@ export default function useAuth() {
 
         getSession,
         user,
-        sessionLoading
+        sessionLoading,
+
+        requestPasswordReset,
+        verifyAndResetPassword,
+        resetLoading,
+        resetError,
 
     }
 }

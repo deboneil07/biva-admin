@@ -679,6 +679,7 @@ export default function AnnouncementsPage() {
 
     // Mutations for sending all announcements
     const createAnnouncementMutation = useCreateAnnouncement();
+    const deleteAnnouncementMutation = useDeleteAnnouncement();
 
     // Local "set" for each tab
     const [localForms, setLocalForms] = useState<Announcement[]>(() =>
@@ -803,6 +804,17 @@ export default function AnnouncementsPage() {
             },
             onError: (error) => {
                 console.error("Failed to create announcements:", error);
+            },
+        });
+    };
+
+    const handleDelete = () => {
+        deleteAnnouncementMutation.mutate(undefined, {
+            onSuccess: () => {
+                console.log("Announcements deleted successfully!");
+            },
+            onError: (error) => {
+                console.error("Failed to delete announcements:", error);
             },
         });
     };
@@ -1019,6 +1031,26 @@ export default function AnnouncementsPage() {
                                             {createAnnouncementMutation.error
                                                 ?.message ||
                                                 "Failed to send announcements"}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {deleteAnnouncementMutation.isSuccess && (
+                                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md text-green-700">
+                                        <CheckCircle className="w-4 h-4" />
+                                        <span className="text-sm">
+                                            Announcements deleted successfully!
+                                        </span>
+                                    </div>
+                                )}
+
+                                {deleteAnnouncementMutation.isError && (
+                                    <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
+                                        <AlertCircle className="w-4 h-4" />
+                                        <span className="text-sm">
+                                            {deleteAnnouncementMutation.error
+                                                ?.message ||
+                                                "Failed to delete announcements"}
                                         </span>
                                     </div>
                                 )}
@@ -1283,7 +1315,26 @@ export default function AnnouncementsPage() {
                 </div>
             </div>
             {/* Announce Button */}
-            <div className="fixed bottom-8 right-8 z-50">
+            <div className="fixed bottom-8 right-8 z-50 flex gap-3">
+                <Button
+                    size="lg"
+                    variant="destructive"
+                    className="shadow-lg"
+                    onClick={handleDelete}
+                    disabled={deleteAnnouncementMutation.isPending}
+                >
+                    {deleteAnnouncementMutation.isPending ? (
+                        <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Deleting...
+                        </>
+                    ) : (
+                        <>
+                            <Trash className="w-4 h-4 mr-2" />
+                            Delete All
+                        </>
+                    )}
+                </Button>
                 <Button
                     size="lg"
                     className="shadow-lg"
