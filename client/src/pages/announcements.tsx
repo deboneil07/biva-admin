@@ -779,27 +779,32 @@ export default function AnnouncementsPage() {
     };
 
     const handleAnnounce = () => {
-        const announcements = forms.map(
-            ({ title, body, displayType, styling, image }) => ({
-                title,
-                body,
-                displayType,
-                styling,
-                image, // Include image (File or string or undefined)
-            }),
-        );
+        const images: (File | null)[] = [];
+        const payload = [];
 
-        createAnnouncementMutation.mutate(
-            { announcements },
-            {
-                onSuccess: () => {
-                    console.log("Announcements created successfully!");
-                },
-                onError: (error) => {
-                    console.error("Failed to create announcements:", error);
-                },
+        for (let i = 0; i < forms.length; i++) {
+            const form = forms[i];
+            
+            images.push(form.image instanceof File ? form.image : null);
+            
+            payload.push({
+                title: form.title,
+                body: form.body,
+                displayType: form.displayType,
+                styling: form.styling,
+            });
+        }
+
+        const data = { images, payload };
+
+        createAnnouncementMutation.mutate(data, {
+            onSuccess: () => {
+                console.log("Announcements created successfully!");
             },
-        );
+            onError: (error) => {
+                console.error("Failed to create announcements:", error);
+            },
+        });
     };
 
     // Preview data for active tab

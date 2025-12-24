@@ -17,7 +17,19 @@ export interface CreateAnnouncementRequest {
 }
 
 export interface CreateAnnouncementsRequest {
-    announcements: CreateAnnouncementRequest[];
+    images: (File | null)[];
+    payload: {
+        title: string;
+        body: string;
+        displayType: "banner" | "modal" | "popup" | "notification";
+        styling: {
+            backgroundColor: string;
+            textColor: string;
+            borderColor: string;
+            fontSize: "sm" | "md" | "lg";
+            alignment: "left" | "center" | "right";
+        };
+    }[];
 }
 
 export interface CreateAnnouncementResponse {
@@ -85,25 +97,14 @@ const createAnnouncementAPI = async (
     try {
         const formData = new FormData();
 
-        // Separate payload (without images)
-        const payload = data.announcements.map(
-            ({ title, body, displayType, styling }) => ({
-                title,
-                body,
-                displayType,
-                styling,
-            }),
-        );
+        formData.append("payload", JSON.stringify(data.payload));
 
-        formData.append("payload", JSON.stringify(payload));
-
-        // Add images separately
-        data.announcements.forEach((announcement) => {
-            if (announcement.image instanceof File) {
-                formData.append("images", announcement.image);
+        for (let i = 0; i < data.images.length; i++) {
+            const image = data.images[i];
+            if (image instanceof File) {
+                formData.append(`images[${i}]`, image);
             } else {
-                // Send empty file if no image
-                formData.append("images", new File([], ""));
+                formData.append(`images[${i}]`, new File([], ""));
             }
         });
 
