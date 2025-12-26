@@ -44,19 +44,19 @@ export const auth = betterAuth({
       enabled: true,
       maxAge: 60 * 5,
     },
-    expiresIn: 60 * 60 * 24,
+    expiresIn: 60 * 60 * 24 * 7, // 7 days
   },
-  // advanced: {
-  //   defaultCookieAttributes: {
-  //     sameSite: "none",
-  //     secure: true,
-  //     httpOnly: true,
-  //   },
-  //   crossSubDomainCookies: {
-  //     enabled: false,
-  //   },
-  //   useSecureCookies: true,
-  // },
+  advanced: {
+    defaultCookieAttributes: {
+      sameSite: "none",
+      secure: true,
+      httpOnly: true,
+    },
+    crossSubDomainCookies: {
+      enabled: false,
+    },
+    useSecureCookies: true,
+  },
   plugins: [
     admin({
       adminUserIds: ["bwxxiqOpOknRYaom20Iyt4OdjVBnjGrU"],

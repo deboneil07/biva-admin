@@ -246,17 +246,27 @@ export const uploadImageVideoController = async (
 
     const folder = form["folder"] as string;
 
+    // Extract tags separately from other metadata
+    let tags: string | string[] | undefined;
     const metadata: Record<any, any> = {};
+    
     for (const [key, value] of Object.entries(form)) {
       if (key === "folder" || key === "file") continue;
       if (typeof value === "string") {
-        metadata[key] = value;
+        if (key === "tags") {
+          // Handle tags - can be comma-separated string or array
+          tags = value.includes(",") ? value.split(",").map(t => t.trim()) : value;
+        } else {
+          metadata[key] = value;
+        }
       }
     }
+    
     const res = await cloudService.uploadMedia(file, {
       maxSizeBytes: 20 * 1024 * 1024,
       folder,
       context: metadata,
+      tags,
     });
     return c.json(res);
   } catch (err: any) {

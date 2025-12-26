@@ -1,3 +1,5 @@
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+
 export const PROPS = {
     hero: [
         {
@@ -50,6 +52,10 @@ export const PROPS = {
             key: "description",
             value: null,
         },
+        {
+            key: "tags",
+            value: ["bread", "biscuit", "rusk", "puff_and_snacks"],
+        }
     ],
     events: [
         {
