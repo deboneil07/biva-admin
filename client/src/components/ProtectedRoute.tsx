@@ -22,10 +22,15 @@ export function ProtectedRoute({
     const [error, setError] = useState<any>(null);
 
     useEffect(() => {
+        let mounted = true;
         const checkAuth = async () => {
             try {
                 setIsLoading(true);
+                // Add a small delay to ensure cookies are set
+                await new Promise(resolve => setTimeout(resolve, 100));
                 const response = await authClient.getSession();
+
+                if (!mounted) return;
 
                 if (response.data?.user) {
                     setUser(response.data.user);
@@ -36,15 +41,23 @@ export function ProtectedRoute({
                 }
             } catch (err) {
                 console.error("Auth check error:", err);
-                setError(err);
-                setUser(null);
-                setRole(null);
+                if (mounted) {
+                    setError(err);
+                    setUser(null);
+                    setRole(null);
+                }
             } finally {
-                setIsLoading(false);
+                if (mounted) {
+                    setIsLoading(false);
+                }
             }
         };
 
         checkAuth();
+        
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     // Show loading spinner while checking auth

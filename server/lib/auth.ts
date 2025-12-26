@@ -44,7 +44,7 @@ export const auth = betterAuth({
       enabled: true,
       maxAge: 60 * 5,
     },
-    expiresIn: 60 * 60 * 24,
+    expiresIn: 60 * 60 * 24 * 7, // 7 days
   },
   advanced: {
     defaultCookieAttributes: {
