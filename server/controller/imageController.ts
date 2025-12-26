@@ -200,10 +200,10 @@ export const getImage = async (c: Context) => {
         if (!primaryTag || !bakeryTypes.includes(primaryTag)) {
           return;
         }
-        const desc = img.context?.alt ?? "Description not available";
+        const desc = img.context?.description ?? "Description not available";
 
         groupedItems[primaryTag as keyof GroupedBakeryItems].push({
-          title: img.context?.caption ?? "",
+          title: img.context?.name ?? "",
           public_id: img.public_id,
           desc,
           url: img.optimized_url,
