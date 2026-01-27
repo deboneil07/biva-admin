@@ -176,7 +176,6 @@ adminRouter.get(
           aadhar_img_url: user.aadhar_img_url,
         })
         .from(user)
-        .where(ne(user.role, "admin"))
         .orderBy(desc(user.createdAt));
 
       return c.json({
