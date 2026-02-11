@@ -64,13 +64,13 @@ export const auth = betterAuth({
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
         console.log(`[EmailOTP] Type: ${type}, Email: ${email}, OTP: ${otp}`);
-        
+
         if (type === "forget-password") {
           // console.log(`\n===========================================`);
           // console.log(`PASSWORD RESET OTP FOR: ${email}`);
           // console.log(`OTP CODE: ${otp}`);
           // console.log(`===========================================\n`);
-          
+
           try {
             // Send email to bivawebsite@gmail.com (your verified Resend email)
             // Note: To send to hello@thebiva.com, you need to verify your domain at resend.com/domains

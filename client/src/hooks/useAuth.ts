@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function useAuth() {
-
     const navigate = useNavigate();
 
     const [signInData, signInSetData] = useState<any>(null);
@@ -22,21 +21,21 @@ export default function useAuth() {
     async function requestPasswordReset(email: string) {
         setResetLoading(true);
         setResetError(null);
-        console.log('Requesting password reset for:', email);
+        console.log("Requesting password reset for:", email);
 
         try {
             const { data, error } = await authClient.forgetPassword.emailOtp({
-                email
+                email,
             });
-            console.log('Password reset response:', { data, error });
+            console.log("Password reset response:", { data, error });
             if (error) {
-                console.error('Password reset error:', error);
+                console.error("Password reset error:", error);
                 setResetError(error);
                 return false;
             }
             return true;
         } catch (err) {
-            console.error('Password reset catch error:', err);
+            console.error("Password reset catch error:", err);
             setResetError(err);
             return false;
         } finally {
@@ -44,26 +43,30 @@ export default function useAuth() {
         }
     }
 
-    async function verifyAndResetPassword(email: string, otp: string, password: string) {
+    async function verifyAndResetPassword(
+        email: string,
+        otp: string,
+        password: string,
+    ) {
         setResetLoading(true);
         setResetError(null);
-        console.log('Verifying OTP and resetting password for:', email);
+        console.log("Verifying OTP and resetting password for:", email);
 
         try {
             const { data, error } = await authClient.emailOtp.resetPassword({
                 email,
                 otp,
-                password
+                password,
             });
-            console.log('Reset password response:', { data, error });
+            console.log("Reset password response:", { data, error });
             if (error) {
-                console.error('Reset password error:', error);
+                console.error("Reset password error:", error);
                 setResetError(error);
                 return false;
             }
             return true;
-        } catch(err) {
-            console.error('Reset password catch error:', err);
+        } catch (err) {
+            console.error("Reset password catch error:", err);
             setResetError(err);
             return false;
         } finally {
@@ -78,9 +81,9 @@ export default function useAuth() {
             const { data, error } = await authClient.signIn.email({
                 email: email,
                 password: password,
-                callbackURL: 'https://biva-admin.onrender.com/dashboard',
+                callbackURL: "https://biva-admin.onrender.com/dashboard",
                 // 'https://biva-admin.onrender.com/dashboard'
-            })
+            });
             data ? signInSetData(data) : signInSetError(error);
         } catch (err) {
             signInSetError(err);
@@ -98,25 +101,22 @@ export default function useAuth() {
                 fetchOptions: {
                     onSuccess: () => {
                         navigate("/");
-                    }
-                }
-            })
+                    },
+                },
+            });
         } catch (err) {
-            signOutSetError(err)
+            signOutSetError(err);
         } finally {
             signOutSetLoading(false);
         }
     }
 
     async function getSession() {
-
         sessionSetLoading(true);
         const data = await authClient.getSession();
         setUser(data?.data?.user);
         sessionSetLoading(false);
-
     }
-
 
     return {
         signIn,
@@ -136,6 +136,5 @@ export default function useAuth() {
         verifyAndResetPassword,
         resetLoading,
         resetError,
-
-    }
+    };
 }
