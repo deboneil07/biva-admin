@@ -45,7 +45,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { Eye } from "lucide-react";
+import { Eye, Pencil } from "lucide-react";
 
 export type TableDataType = {
     event_id?: string;
@@ -69,7 +69,9 @@ export const schema = z.object({
     url: z.string(),
 });
 
-const columns: ColumnDef<z.infer<typeof schema>>[] = [
+const createColumns = (
+    onUpdateSuccess?: () => void,
+): ColumnDef<z.infer<typeof schema>>[] => [
     {
         id: "select",
         header: ({ table }) => (
@@ -104,17 +106,15 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
                         checked={isSelected}
                         onCheckedChange={(value) => {
                             if (value) {
-                                // Add to selection
                                 const newIds = [
                                     ...selectedIds,
-                                    row.original.event_id,
+                                    row.original.event_id as string,
                                 ];
                                 updateStore({
                                     id: newIds,
                                     count: newIds.length,
                                 });
                             } else {
-                                // Remove from selection
                                 const newIds = selectedIds.filter(
                                     (id) => id !== row.original.event_id,
                                 );
@@ -137,7 +137,12 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
         accessorKey: "event_id",
         header: "Event ID",
         cell: ({ row }) => {
-            return <TableCellViewer item={row.original} />;
+            return (
+                <TableCellViewer
+                    item={row.original}
+                    onUpdateSuccess={onUpdateSuccess}
+                />
+            );
         },
         enableHiding: false,
     },
@@ -195,7 +200,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
             <div className="w-16 h-12 rounded overflow-hidden">
                 <img
                     src={row.original.url}
-                    alt={row.original.name || "Event image"}
+                    alt={row.original.event_name || "Event image"}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                         e.currentTarget.src = "/placeholder-event.jpg";
@@ -210,18 +215,38 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
         enableHiding: false,
         enableSorting: false,
         cell: ({ row }) => (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+                {/* View button — opens drawer in read mode */}
                 <TableCellViewer
                     item={row.original}
+                    onUpdateSuccess={onUpdateSuccess}
                     triggerButton={
                         <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 px-3 hover:bg-blue-50 hover:border-blue-300"
+                            className="h-8 w-8 hover:bg-muted"
+                            title="View event"
                         >
-                            <Eye />
+                            <Eye className="h-4 w-4" />
                         </Button>
                     }
+                    openInEditMode={false}
+                />
+                {/* Edit button — opens drawer directly in edit mode */}
+                <TableCellViewer
+                    item={row.original}
+                    onUpdateSuccess={onUpdateSuccess}
+                    triggerButton={
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                            title="Edit event"
+                        >
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                    }
+                    openInEditMode={true}
                 />
             </div>
         ),
@@ -244,6 +269,11 @@ export function Events({
     error?: any;
     onDeleteSuccess?: () => void;
 }) {
+    const columns = React.useMemo(
+        () => createColumns(onDeleteSuccess),
+        [onDeleteSuccess],
+    );
+
     const [data, setData] = React.useState(
         () => initialData?.data || initialData || [],
     );
@@ -325,8 +355,8 @@ export function Events({
             // Show error message
             toast.error(
                 error.response?.data?.message ||
-                error.message ||
-                "Failed to delete events. Please try again.",
+                    error.message ||
+                    "Failed to delete events. Please try again.",
             );
         } finally {
             setIsDeleting(false);
@@ -432,10 +462,10 @@ export function Events({
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
-                                                    header.column.columnDef
-                                                        .header,
-                                                    header.getContext(),
-                                                )}
+                                                      header.column.columnDef
+                                                          .header,
+                                                      header.getContext(),
+                                                  )}
                                         </TableHead>
                                     ))}
                                 </TableRow>
@@ -503,12 +533,17 @@ export function Events({
 function TableCellViewer({
     item,
     triggerButton,
+    onUpdateSuccess,
+    openInEditMode = false,
 }: {
     item: z.infer<typeof schema>;
     triggerButton?: React.ReactNode;
+    onUpdateSuccess?: () => void;
+    openInEditMode?: boolean;
 }) {
     const isMobile = useIsMobile();
     const [isOpen, setIsOpen] = React.useState(false);
+    const [isEditMode, setIsEditMode] = React.useState(openInEditMode);
     const [isUpdating, setIsUpdating] = React.useState(false);
 
     const [formData, setFormData] = React.useState({
@@ -519,9 +554,10 @@ function TableCellViewer({
         price: item.price || "",
     });
 
-    // reset on open
+    // reset form and honour openInEditMode whenever the drawer opens
     React.useEffect(() => {
         if (isOpen) {
+            setIsEditMode(openInEditMode);
             setFormData({
                 event_name: item.event_name || "",
                 group_name: item.group_name || "",
@@ -530,7 +566,7 @@ function TableCellViewer({
                 price: item.price || "",
             });
         }
-    }, [isOpen, item]);
+    }, [isOpen, item, openInEditMode]);
 
     const hasChanges =
         formData.event_name !== (item.event_name || "") ||
@@ -541,6 +577,7 @@ function TableCellViewer({
 
     const handleUpdate = async () => {
         setIsUpdating(true);
+        const loadingToast = toast.loading("Saving changes…");
         try {
             const payload = {
                 public_id: item.public_id,
@@ -553,10 +590,15 @@ function TableCellViewer({
 
             await instance.patch(`/event/update/${item.event_id}`, payload);
 
-            toast.success("Event updated");
+            toast.dismiss(loadingToast);
+            toast.success("Event updated successfully!");
             setIsOpen(false);
-        } catch (err) {
-            toast.error("Update failed");
+
+            // Refetch the events list so the table shows the updated values
+            if (onUpdateSuccess) onUpdateSuccess();
+        } catch {
+            toast.dismiss(loadingToast);
+            toast.error("Update failed. Please try again.");
         } finally {
             setIsUpdating(false);
         }
@@ -566,7 +608,10 @@ function TableCellViewer({
         <Drawer
             direction={isMobile ? "bottom" : "right"}
             open={isOpen}
-            onOpenChange={setIsOpen}
+            onOpenChange={(open) => {
+                setIsOpen(open);
+                if (!open) setIsEditMode(false);
+            }}
         >
             <DrawerTrigger asChild>
                 {triggerButton || (
@@ -581,115 +626,227 @@ function TableCellViewer({
 
             <DrawerContent>
                 <DrawerHeader className="gap-1">
-                    <DrawerTitle>
-                        Event Details –{" "}
-                        {item.event_name || item.event_id || item.public_id}
-                    </DrawerTitle>
+                    <div className="flex items-center justify-between pr-4">
+                        <DrawerTitle>
+                            {isEditMode ? "Edit Event" : "Event Details"} –{" "}
+                            {item.event_name || item.event_id || item.public_id}
+                        </DrawerTitle>
+                        {/* Toggle between view / edit */}
+                        {!isEditMode ? (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                                onClick={() => setIsEditMode(true)}
+                            >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Edit
+                            </Button>
+                        ) : (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-muted-foreground"
+                                onClick={() => setIsEditMode(false)}
+                                disabled={isUpdating}
+                            >
+                                Cancel
+                            </Button>
+                        )}
+                    </div>
                 </DrawerHeader>
 
                 <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-                    {/* Image */}
+                    {/* Event image — always visible */}
                     <div className="flex flex-col gap-2">
                         <Label>Event Image</Label>
                         <div className="h-48 overflow-hidden rounded-lg border">
                             <img
                                 src={item.url}
+                                alt={item.event_name || "Event image"}
                                 className="h-full w-full object-cover"
                             />
                         </div>
                     </div>
 
-                    {/* Editable Fields */}
-                    <div className="flex flex-col gap-3">
-                        <Label>Event Name</Label>
-                        <Input
-                            value={formData.event_name}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    event_name: e.target.value,
-                                })
-                            }
-                        />
-
-                        <Label>Group Name</Label>
-                        <Input
-                            value={formData.group_name}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    group_name: e.target.value,
-                                })
-                            }
-                        />
-
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <Label>Date</Label>
-                                <Input
-                                    type={isMobile ? "text" : "date"}
-                                    inputMode="numeric"
-                                    placeholder="YYYY-MM-DD"
-                                    value={formData.date}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            date: e.target.value,
-                                        })
-                                    }
-                                />
-                            </div>
-
-                            <div>
-                                <Label>Time</Label>
-                                <Input
-                                    type={isMobile ? "text" : "time"}
-                                    inputMode="numeric"
-                                    placeholder="HH:MM"
-                                    value={formData.time}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            time: e.target.value,
-                                        })
-                                    }
-                                />
+                    {/* ── VIEW MODE ── */}
+                    {!isEditMode && (
+                        <div className="flex flex-col gap-3">
+                            <div className="rounded-lg border p-4 space-y-3 text-sm">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <span className="text-muted-foreground">
+                                            Event Name
+                                        </span>
+                                        <p className="font-medium mt-0.5">
+                                            {item.event_name || "—"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span className="text-muted-foreground">
+                                            Group Name
+                                        </span>
+                                        <p className="font-medium mt-0.5">
+                                            {item.group_name || "—"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span className="text-muted-foreground">
+                                            Date
+                                        </span>
+                                        <p className="font-medium mt-0.5">
+                                            {item.date || "—"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span className="text-muted-foreground">
+                                            Time
+                                        </span>
+                                        <p className="font-medium mt-0.5">
+                                            {item.time || "—"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span className="text-muted-foreground">
+                                            Ticket Price
+                                        </span>
+                                        <p className="font-medium text-green-600 mt-0.5">
+                                            {item.price
+                                                ? `₹${item.price}`
+                                                : "—"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span className="text-muted-foreground">
+                                            Event ID
+                                        </span>
+                                        <p className="font-mono text-xs mt-0.5 truncate">
+                                            {item.event_id || "—"}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    )}
 
-                        <Label>Price</Label>
-                        <Input
-                            value={formData.price}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    price: e.target.value,
-                                })
-                            }
-                        />
-                    </div>
+                    {/* ── EDIT MODE ── */}
+                    {isEditMode && (
+                        <div className="flex flex-col gap-3">
+                            <div className="rounded-lg border border-blue-100 bg-blue-50/40 px-4 py-3 text-sm text-blue-700">
+                                Edit the fields below and press Save to update
+                                both the database and Cloudinary.
+                            </div>
+
+                            <Label>Event Name</Label>
+                            <Input
+                                value={formData.event_name}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        event_name: e.target.value,
+                                    })
+                                }
+                                disabled={isUpdating}
+                            />
+
+                            <Label>Group Name</Label>
+                            <Input
+                                value={formData.group_name}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        group_name: e.target.value,
+                                    })
+                                }
+                                disabled={isUpdating}
+                            />
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="flex flex-col gap-1.5">
+                                    <Label>Date</Label>
+                                    <Input
+                                        type={isMobile ? "text" : "date"}
+                                        inputMode="numeric"
+                                        placeholder="YYYY-MM-DD"
+                                        value={formData.date}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                date: e.target.value,
+                                            })
+                                        }
+                                        disabled={isUpdating}
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                    <Label>Time</Label>
+                                    <Input
+                                        type={isMobile ? "text" : "time"}
+                                        inputMode="numeric"
+                                        placeholder="HH:MM"
+                                        value={formData.time}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                time: e.target.value,
+                                            })
+                                        }
+                                        disabled={isUpdating}
+                                    />
+                                </div>
+                            </div>
+
+                            <Label>Ticket Price (₹)</Label>
+                            <Input
+                                type="number"
+                                min={0}
+                                value={formData.price}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        price: e.target.value,
+                                    })
+                                }
+                                disabled={isUpdating}
+                                placeholder="e.g. 500"
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <DrawerFooter>
-                    <Button
-                        onClick={handleUpdate}
-                        disabled={!hasChanges || isUpdating}
-                        className="w-full"
-                    >
-                        {isUpdating
-                            ? "Updating..."
-                            : hasChanges
-                                ? "Update"
-                                : "No Changes"}
-                    </Button>
-
-                    <Button
-                        variant="outline"
-                        onClick={() => setIsOpen(false)}
-                        className="w-full"
-                    >
-                        Close
-                    </Button>
+                    {isEditMode ? (
+                        <>
+                            <Button
+                                onClick={handleUpdate}
+                                disabled={!hasChanges || isUpdating}
+                                className="w-full"
+                            >
+                                {isUpdating
+                                    ? "Saving…"
+                                    : hasChanges
+                                      ? "Save Changes"
+                                      : "No Changes"}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsEditMode(false)}
+                                disabled={isUpdating}
+                                className="w-full"
+                            >
+                                Cancel
+                            </Button>
+                        </>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsOpen(false)}
+                            className="w-full"
+                        >
+                            Close
+                        </Button>
+                    )}
                 </DrawerFooter>
             </DrawerContent>
         </Drawer>

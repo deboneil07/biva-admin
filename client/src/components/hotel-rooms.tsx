@@ -66,7 +66,10 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { Eye } from "lucide-react";
+import { Eye, Pencil, X, Check, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 export type TableDataType = {
     public_id: string;
@@ -252,6 +255,541 @@ import { instance } from "@/utils/axios";
 import { useRoomStore } from "@/store/room-store";
 
 import { Badge } from "@/components/ui/badge";
+
+// ─── EditRoomSheet ────────────────────────────────────────────────────────────
+// A Sheet that shows room details and allows editing metadata (no image changes)
+function EditRoomSheet({
+    group,
+    onUpdateSuccess,
+}: {
+    group: {
+        room_type: string;
+        total_rooms: number;
+        price: string;
+        description: string;
+        images: string[];
+        rooms: any[];
+    };
+    onUpdateSuccess?: () => void;
+}) {
+    const [isOpen, setIsOpen] = React.useState(false);
+    const [mode, setMode] = React.useState<"view" | "edit">("view");
+    const [isSaving, setIsSaving] = React.useState(false);
+
+    // Edit form state — initialised from group data
+    const [editPrice, setEditPrice] = React.useState(group.price);
+    const [editOccupancy, setEditOccupancy] = React.useState("");
+    const [editTotalRooms, setEditTotalRooms] = React.useState(
+        group.total_rooms.toString(),
+    );
+    const [editDescription, setEditDescription] = React.useState(
+        group.description || "",
+    );
+
+    // Reset form to latest group values whenever the sheet opens or mode changes
+    React.useEffect(() => {
+        if (isOpen) {
+            setEditPrice(group.price);
+            setEditTotalRooms(group.total_rooms.toString());
+            setEditDescription(group.description || "");
+        }
+    }, [isOpen, group]);
+
+    const handleCancelEdit = () => {
+        setEditPrice(group.price);
+        setEditTotalRooms(group.total_rooms.toString());
+        setEditDescription(group.description || "");
+        setMode("view");
+    };
+
+    const handleSave = async () => {
+        if (!editPrice || isNaN(Number(editPrice))) {
+            toast.error("Please enter a valid price.");
+            return;
+        }
+        if (!editTotalRooms || isNaN(Number(editTotalRooms))) {
+            toast.error("Please enter a valid total rooms count.");
+            return;
+        }
+
+        setIsSaving(true);
+        const loadingToast = toast.loading("Saving changes…");
+
+        try {
+            const payload: Record<string, any> = {
+                price: Number(editPrice),
+                total_rooms: editTotalRooms,
+                description: editDescription,
+            };
+            if (editOccupancy && !isNaN(Number(editOccupancy))) {
+                payload.occupancy = Number(editOccupancy);
+            }
+
+            const response = await instance.put(
+                `/room/update/${encodeURIComponent(group.room_type)}`,
+                payload,
+            );
+
+            toast.dismiss(loadingToast);
+
+            if (response.status === 200) {
+                toast.success(`${group.room_type} updated successfully!`);
+                setMode("view");
+                if (onUpdateSuccess) onUpdateSuccess();
+            } else {
+                throw new Error(
+                    `Server responded with status ${response.status}`,
+                );
+            }
+        } catch (error: any) {
+            toast.dismiss(loadingToast);
+            console.error("Error updating room:", error);
+            toast.error(
+                error.response?.data?.error ||
+                    error.message ||
+                    "Failed to update room. Please try again.",
+            );
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <Sheet
+            open={isOpen}
+            onOpenChange={(open) => {
+                setIsOpen(open);
+                if (!open) setMode("view");
+            }}
+        >
+            {/* ── Trigger buttons: Eye (view) + Pencil (edit) ── */}
+            <div className="flex items-center gap-1">
+                <SheetTrigger asChild>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setMode("view")}
+                        title="View room details"
+                    >
+                        <Eye className="h-4 w-4" />
+                    </Button>
+                </SheetTrigger>
+                <SheetTrigger asChild>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                        onClick={() => setMode("edit")}
+                        title="Edit room"
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                </SheetTrigger>
+            </div>
+
+            <SheetContent
+                side="right"
+                className="w-full sm:w-[560px] sm:max-w-none p-0 flex flex-col"
+            >
+                {/* ── Header ── */}
+                <SheetHeader className="px-6 pt-6 pb-4 border-b">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <SheetTitle className="text-xl">
+                                {group.room_type}
+                            </SheetTitle>
+                            <SheetDescription className="mt-0.5">
+                                {mode === "edit"
+                                    ? "Edit room details below, then save."
+                                    : "Room details and management"}
+                            </SheetDescription>
+                        </div>
+                        {/* Mode toggle */}
+                        {mode === "view" ? (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                                onClick={() => setMode("edit")}
+                            >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Edit
+                            </Button>
+                        ) : (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="gap-1.5 text-muted-foreground"
+                                onClick={handleCancelEdit}
+                                disabled={isSaving}
+                            >
+                                <X className="h-3.5 w-3.5" />
+                                Cancel
+                            </Button>
+                        )}
+                    </div>
+                </SheetHeader>
+
+                <ScrollArea className="flex-1 px-6">
+                    <div className="py-6 space-y-6">
+                        {/* ══════════════ VIEW MODE ══════════════ */}
+                        {mode === "view" && (
+                            <>
+                                {/* Overview card */}
+                                <div className="rounded-lg border p-4 space-y-3">
+                                    <h3 className="font-semibold">
+                                        Room Type Overview
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <span className="text-muted-foreground">
+                                                Type
+                                            </span>
+                                            <p className="font-medium mt-0.5">
+                                                {group.room_type}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span className="text-muted-foreground">
+                                                Total Rooms
+                                            </span>
+                                            <p className="font-medium mt-0.5">
+                                                {group.total_rooms}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span className="text-muted-foreground">
+                                                Price per night
+                                            </span>
+                                            <p className="font-medium text-green-600 mt-0.5">
+                                                ₹{group.price}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span className="text-muted-foreground">
+                                                Images
+                                            </span>
+                                            <p className="font-medium mt-0.5">
+                                                {group.images.length}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {group.description && (
+                                        <div>
+                                            <span className="text-muted-foreground text-sm">
+                                                Description
+                                            </span>
+                                            <p className="text-sm mt-1">
+                                                {group.description}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Image gallery */}
+                                <div className="space-y-3">
+                                    <h3 className="font-semibold">
+                                        Images ({group.images.length})
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {group.images.map(
+                                            (image: string, index: number) => (
+                                                <div
+                                                    key={index}
+                                                    className="relative group/img"
+                                                >
+                                                    <img
+                                                        src={image}
+                                                        alt={`${group.room_type} ${index + 1}`}
+                                                        className="w-full h-32 object-cover rounded-lg border"
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors rounded-lg" />
+                                                    <div className="absolute bottom-2 left-2">
+                                                        <Badge
+                                                            variant="secondary"
+                                                            className="text-xs"
+                                                        >
+                                                            {index + 1}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                            ),
+                                        )}
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                {/* Individual rooms */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="font-semibold">
+                                            Individual Rooms
+                                        </h3>
+                                        <Badge variant="outline">
+                                            {group.rooms.length} rooms
+                                        </Badge>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {group.rooms.map(
+                                            (room: any, index: number) => (
+                                                <div
+                                                    key={room.public_id}
+                                                    className="border rounded-lg p-4 space-y-3"
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <img
+                                                                src={room.url}
+                                                                alt={`Room ${index + 1}`}
+                                                                className="h-12 w-12 rounded object-cover border"
+                                                            />
+                                                            <div>
+                                                                <p className="font-medium text-sm">
+                                                                    Room #
+                                                                    {room.room_number ||
+                                                                        `${index + 1}`}
+                                                                </p>
+                                                                <p className="text-xs text-muted-foreground font-mono">
+                                                                    ID:{" "}
+                                                                    {room.public_id.slice(
+                                                                        0,
+                                                                        8,
+                                                                    )}
+                                                                    ...
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="text-xs"
+                                                        >
+                                                            Room {index + 1}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3 text-xs">
+                                                        <div>
+                                                            <span className="text-muted-foreground">
+                                                                Price
+                                                            </span>
+                                                            <p className="font-medium text-green-600">
+                                                                ₹{room.price}
+                                                            </p>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-muted-foreground">
+                                                                Type
+                                                            </span>
+                                                            <p className="font-medium">
+                                                                {room.room_type}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    {room.desc && (
+                                                        <div className="text-xs">
+                                                            <span className="text-muted-foreground">
+                                                                Description
+                                                            </span>
+                                                            <p className="mt-1">
+                                                                {room.desc}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex gap-2 pt-1">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="text-xs h-7"
+                                                            onClick={() =>
+                                                                window.open(
+                                                                    room.url,
+                                                                    "_blank",
+                                                                )
+                                                            }
+                                                        >
+                                                            View Image
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-xs h-7 text-muted-foreground"
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(
+                                                                    room.public_id,
+                                                                );
+                                                                toast.success(
+                                                                    "Room ID copied",
+                                                                );
+                                                            }}
+                                                        >
+                                                            Copy ID
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ),
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {/* ══════════════ EDIT MODE ══════════════ */}
+                        {mode === "edit" && (
+                            <div className="space-y-5">
+                                <div className="rounded-lg border border-blue-100 bg-blue-50/40 px-4 py-3 text-sm text-blue-700">
+                                    Changes will be saved to both the database
+                                    and Cloudinary metadata. Images cannot be
+                                    changed here.
+                                </div>
+
+                                {/* Room type — read-only */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-sm font-medium">
+                                        Room Type
+                                    </Label>
+                                    <Input
+                                        value={group.room_type}
+                                        disabled
+                                        className="bg-muted cursor-not-allowed"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Room type cannot be changed.
+                                    </p>
+                                </div>
+
+                                {/* Price */}
+                                <div className="space-y-1.5">
+                                    <Label
+                                        htmlFor="edit-price"
+                                        className="text-sm font-medium"
+                                    >
+                                        Price per Night (₹){" "}
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="edit-price"
+                                        type="number"
+                                        min={0}
+                                        value={editPrice}
+                                        onChange={(e) =>
+                                            setEditPrice(e.target.value)
+                                        }
+                                        disabled={isSaving}
+                                        placeholder="e.g. 5000"
+                                    />
+                                </div>
+
+                                {/* Occupancy */}
+                                <div className="space-y-1.5">
+                                    <Label
+                                        htmlFor="edit-occupancy"
+                                        className="text-sm font-medium"
+                                    >
+                                        Occupancy (persons)
+                                    </Label>
+                                    <Input
+                                        id="edit-occupancy"
+                                        type="number"
+                                        min={1}
+                                        value={editOccupancy}
+                                        onChange={(e) =>
+                                            setEditOccupancy(e.target.value)
+                                        }
+                                        disabled={isSaving}
+                                        placeholder="Leave blank to keep current"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Leave blank to keep the current
+                                        occupancy value.
+                                    </p>
+                                </div>
+
+                                {/* Total rooms */}
+                                <div className="space-y-1.5">
+                                    <Label
+                                        htmlFor="edit-total-rooms"
+                                        className="text-sm font-medium"
+                                    >
+                                        Total Rooms{" "}
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
+                                    </Label>
+                                    <Input
+                                        id="edit-total-rooms"
+                                        type="number"
+                                        min={1}
+                                        value={editTotalRooms}
+                                        onChange={(e) =>
+                                            setEditTotalRooms(e.target.value)
+                                        }
+                                        disabled={isSaving}
+                                        placeholder="e.g. 10"
+                                    />
+                                </div>
+
+                                {/* Description */}
+                                <div className="space-y-1.5">
+                                    <Label
+                                        htmlFor="edit-description"
+                                        className="text-sm font-medium"
+                                    >
+                                        Description
+                                    </Label>
+                                    <Textarea
+                                        id="edit-description"
+                                        rows={4}
+                                        value={editDescription}
+                                        onChange={(e) =>
+                                            setEditDescription(e.target.value)
+                                        }
+                                        disabled={isSaving}
+                                        placeholder="Enter room description…"
+                                        className="resize-none"
+                                    />
+                                </div>
+
+                                <Separator />
+
+                                {/* Save / Cancel */}
+                                <div className="flex gap-3">
+                                    <Button
+                                        className="flex-1 gap-2"
+                                        onClick={handleSave}
+                                        disabled={isSaving}
+                                    >
+                                        {isSaving ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                Saving…
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Check className="h-4 w-4" />
+                                                Save Changes
+                                            </>
+                                        )}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1"
+                                        onClick={handleCancelEdit}
+                                        disabled={isSaving}
+                                    >
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
+            </SheetContent>
+        </Sheet>
+    );
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Remove the old createColumns function completely and update the component
 
@@ -511,339 +1049,11 @@ export function HotelRooms({
             enableSorting: false,
             cell: ({ row }) => {
                 const group = row.original;
-
                 return (
-                    <div className="flex items-center gap-2">
-                        <Sheet>
-                            <SheetTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                    <Eye className="h-4 w-4" />
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent
-                                side="right"
-                                className="w-full sm:w-[540px] sm:max-w-none"
-                            >
-                                <SheetHeader>
-                                    <SheetTitle>{group.room_type}</SheetTitle>
-                                    <SheetDescription>
-                                        Room details and management for{" "}
-                                        {group.room_type}
-                                    </SheetDescription>
-                                </SheetHeader>
-
-                                <div className="mt-6 space-y-6">
-                                    {/* Room Type Summary */}
-                                    <div className="rounded-lg border p-4 space-y-3">
-                                        <h3 className="font-semibold text-lg">
-                                            Room Type Overview
-                                        </h3>
-                                        <div className="grid grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                                <span className="text-muted-foreground">
-                                                    Type:
-                                                </span>
-                                                <p className="font-medium">
-                                                    {group.room_type}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <span className="text-muted-foreground">
-                                                    Total Rooms:
-                                                </span>
-                                                <p className="font-medium">
-                                                    {group.total_rooms}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <span className="text-muted-foreground">
-                                                    Price per night:
-                                                </span>
-                                                <p className="font-medium text-green-600">
-                                                    ₹{group.price}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <span className="text-muted-foreground">
-                                                    Status:
-                                                </span>
-                                                <Badge
-                                                    variant={
-                                                        selectedRoomTypes.includes(
-                                                            group.room_type,
-                                                        )
-                                                            ? "destructive"
-                                                            : "secondary"
-                                                    }
-                                                >
-                                                    {selectedRoomTypes.includes(
-                                                        group.room_type,
-                                                    )
-                                                        ? "Selected"
-                                                        : "Available"}
-                                                </Badge>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <span className="text-muted-foreground text-sm">
-                                                Description:
-                                            </span>
-                                            <p className="text-sm mt-1">
-                                                {group.description}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Image Gallery */}
-                                    <div className="space-y-3">
-                                        <h3 className="font-semibold">
-                                            Images ({group.images.length})
-                                        </h3>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {group.images.map(
-                                                (
-                                                    image: string,
-                                                    index: number,
-                                                ) => (
-                                                    <div
-                                                        key={index}
-                                                        className="relative group"
-                                                    >
-                                                        <img
-                                                            src={image}
-                                                            alt={`${group.room_type} ${index + 1}`}
-                                                            className="w-full h-32 object-cover rounded-lg border"
-                                                        />
-                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
-                                                        <div className="absolute bottom-2 left-2">
-                                                            <Badge
-                                                                variant="secondary"
-                                                                className="text-xs"
-                                                            >
-                                                                {index + 1}
-                                                            </Badge>
-                                                        </div>
-                                                    </div>
-                                                ),
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Individual Rooms Details */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <h3 className="font-semibold">
-                                                Individual Rooms
-                                            </h3>
-                                            <Badge variant="outline">
-                                                {group.rooms.length} rooms
-                                            </Badge>
-                                        </div>
-
-                                        <div className="space-y-3 max-h-96 overflow-y-auto">
-                                            {group.rooms.map(
-                                                (room: any, index: number) => (
-                                                    <div
-                                                        key={room.public_id}
-                                                        className="border rounded-lg p-4 space-y-3"
-                                                    >
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-3">
-                                                                <img
-                                                                    src={
-                                                                        room.url
-                                                                    }
-                                                                    alt={`Room ${index + 1}`}
-                                                                    className="h-12 w-12 rounded object-cover border"
-                                                                />
-                                                                <div>
-                                                                    <p className="font-medium text-sm">
-                                                                        Room #
-                                                                        {room.room_number ||
-                                                                            `${index + 1}`}
-                                                                    </p>
-                                                                    <p className="text-xs text-muted-foreground font-mono">
-                                                                        ID:{" "}
-                                                                        {room.public_id.slice(
-                                                                            0,
-                                                                            8,
-                                                                        )}
-                                                                        ...
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                            <Badge
-                                                                variant="outline"
-                                                                className="text-xs"
-                                                            >
-                                                                Room {index + 1}
-                                                            </Badge>
-                                                        </div>
-
-                                                        <div className="grid grid-cols-2 gap-3 text-xs">
-                                                            <div>
-                                                                <span className="text-muted-foreground">
-                                                                    Price:
-                                                                </span>
-                                                                <p className="font-medium text-green-600">
-                                                                    ₹
-                                                                    {room.price}
-                                                                </p>
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-muted-foreground">
-                                                                    Type:
-                                                                </span>
-                                                                <p className="font-medium">
-                                                                    {
-                                                                        room.room_type
-                                                                    }
-                                                                </p>
-                                                            </div>
-                                                        </div>
-
-                                                        {room.desc && (
-                                                            <div className="text-xs">
-                                                                <span className="text-muted-foreground">
-                                                                    Description:
-                                                                </span>
-                                                                <p className="mt-1 text-sm">
-                                                                    {room.desc}
-                                                                </p>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Room specific actions */}
-                                                        <div className="flex gap-2 pt-2">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="text-xs h-7"
-                                                                onClick={() =>
-                                                                    window.open(
-                                                                        room.url,
-                                                                        "_blank",
-                                                                    )
-                                                                }
-                                                            >
-                                                                View Image
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="text-xs h-7 text-muted-foreground"
-                                                                onClick={() => {
-                                                                    navigator.clipboard.writeText(
-                                                                        room.public_id,
-                                                                    );
-                                                                    toast.success(
-                                                                        "Room ID copied",
-                                                                    );
-                                                                }}
-                                                            >
-                                                                Copy ID
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                ),
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Quick Actions */}
-                                    <div className="border-t pt-4 space-y-3">
-                                        <h3 className="font-semibold">
-                                            Quick Actions
-                                        </h3>
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="flex-1"
-                                                onClick={() => {
-                                                    const isSelected =
-                                                        selectedRoomTypes.includes(
-                                                            group.room_type,
-                                                        );
-                                                    if (isSelected) {
-                                                        const newSelected =
-                                                            selectedRoomTypes.filter(
-                                                                (type) =>
-                                                                    type !==
-                                                                    group.room_type,
-                                                            );
-                                                        updateStore({
-                                                            selectedRoomTypes:
-                                                                newSelected,
-                                                            count: newSelected.length,
-                                                        });
-                                                        toast.success(
-                                                            `${group.room_type} deselected`,
-                                                        );
-                                                    } else {
-                                                        const newSelected = [
-                                                            ...selectedRoomTypes,
-                                                            group.room_type,
-                                                        ];
-                                                        updateStore({
-                                                            selectedRoomTypes:
-                                                                newSelected,
-                                                            count: newSelected.length,
-                                                        });
-                                                        toast.success(
-                                                            `${group.room_type} selected`,
-                                                        );
-                                                    }
-                                                }}
-                                            >
-                                                {selectedRoomTypes.includes(
-                                                    group.room_type,
-                                                )
-                                                    ? "Deselect Type"
-                                                    : "Select Type"}
-                                            </Button>
-                                            <Button
-                                                variant="secondary"
-                                                size="sm"
-                                                onClick={() => {
-                                                    const roomData = {
-                                                        room_type:
-                                                            group.room_type,
-                                                        total_rooms:
-                                                            group.total_rooms,
-                                                        price: group.price,
-                                                        description:
-                                                            group.description,
-                                                        rooms: group.rooms.map(
-                                                            (r) => ({
-                                                                id: r.public_id,
-                                                                room_number:
-                                                                    r.room_number,
-                                                                image: r.url,
-                                                            }),
-                                                        ),
-                                                    };
-                                                    navigator.clipboard.writeText(
-                                                        JSON.stringify(
-                                                            roomData,
-                                                            null,
-                                                            2,
-                                                        ),
-                                                    );
-                                                    toast.success(
-                                                        "Room data copied to clipboard",
-                                                    );
-                                                }}
-                                            >
-                                                Export Data
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </SheetContent>
-                        </Sheet>
-                    </div>
+                    <EditRoomSheet
+                        group={group}
+                        onUpdateSuccess={onDeleteSuccess}
+                    />
                 );
             },
         },

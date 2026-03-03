@@ -58,6 +58,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Eye, Download } from "lucide-react";
+import { instance } from "@/utils/axios";
 
 export type TableDataType = {
     id: number;
@@ -74,6 +75,7 @@ export type TableDataType = {
     joinDate: string;
     leaveDate: string;
     createdAt: string;
+    secondaryDocImgUrl?: string | null;
 };
 
 export const schema = z.object({
@@ -91,9 +93,13 @@ export const schema = z.object({
     joinDate: z.string(),
     leaveDate: z.string(),
     createdAt: z.string(),
+    secondaryDocImgUrl: z.string().optional().nullable(),
 });
 
-const columns: ColumnDef<z.infer<typeof schema>>[] = [
+const createColumns = (
+    onCancel: (item: z.infer<typeof schema>) => void,
+    isCancellingId: number | null,
+): ColumnDef<z.infer<typeof schema>>[] => [
     {
         accessorKey: "applicationId",
         header: "Application ID",
@@ -219,6 +225,16 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
                         </Button>
                     }
                 />
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => onCancel(row.original)}
+                    disabled={isCancellingId === row.original.id}
+                >
+                    {isCancellingId === row.original.id
+                        ? "Cancelling..."
+                        : "Cancel"}
+                </Button>
             </div>
         ),
     },
@@ -255,6 +271,56 @@ export function HotelBookings({
             toast.error(error.message || "Failed to load data");
         }
     }, [error]);
+
+    const [isCancellingId, setIsCancellingId] = React.useState<number | null>(
+        null,
+    );
+
+    const handleCancel = React.useCallback(
+        async (item: z.infer<typeof schema>) => {
+            const confirmed = window.confirm(
+                `Cancel reservation for ${item.name}?`,
+            );
+            if (!confirmed) return;
+
+            setIsCancellingId(item.id);
+            const loadingToast = toast.loading("Cancelling reservation...");
+
+            try {
+                const response = await instance.delete("/get-bookings/hotel", {
+                    data: { ids: [item.id] },
+                });
+
+                toast.dismiss(loadingToast);
+
+                if (response.status === 200) {
+                    setData((prevData: TableDataType[]) =>
+                        prevData.filter((booking) => booking.id !== item.id),
+                    );
+                    toast.success("Reservation cancelled successfully");
+                } else {
+                    throw new Error(
+                        `Server responded with status ${response.status}`,
+                    );
+                }
+            } catch (error: any) {
+                console.error("Error cancelling reservation:", error);
+                toast.error(
+                    error.response?.data?.error ||
+                        error.message ||
+                        "Failed to cancel reservation. Please try again.",
+                );
+            } finally {
+                setIsCancellingId(null);
+            }
+        },
+        [setData],
+    );
+
+    const columns = React.useMemo(
+        () => createColumns(handleCancel, isCancellingId),
+        [handleCancel, isCancellingId],
+    );
 
     const table = useReactTable({
         data,
@@ -294,6 +360,7 @@ export function HotelBookings({
                         item.createdAt,
                     ).toLocaleString(),
                     "Document URL": item.aadharOrPanImgUrl,
+                    "Secondary Document URL": item.secondaryDocImgUrl || "",
                 };
             });
 
@@ -321,6 +388,7 @@ export function HotelBookings({
                 { wch: 15 }, // Payment Status
                 { wch: 20 }, // Booking Created At
                 { wch: 30 }, // Document URL
+                { wch: 30 }, // Secondary Document URL
             ];
             worksheet["!cols"] = columnWidths;
 
@@ -487,7 +555,7 @@ function TableCellViewer({
                 </DrawerHeader>
                 <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
                     {/* Document Image Section */}
-                    <div className="grid gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-2">
                             <Label>Aadhar/PAN Document</Label>
                             <div className="w-32 h-20 rounded-lg overflow-hidden border">
@@ -497,6 +565,22 @@ function TableCellViewer({
                                     className="w-full h-full object-cover"
                                 />
                             </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <Label>Secondary Document</Label>
+                            {item.secondaryDocImgUrl ? (
+                                <div className="w-32 h-20 rounded-lg overflow-hidden border">
+                                    <img
+                                        src={item.secondaryDocImgUrl}
+                                        alt="Secondary Document"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            ) : (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Not provided
+                                </p>
+                            )}
                         </div>
                     </div>
 

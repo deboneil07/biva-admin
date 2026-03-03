@@ -5,11 +5,141 @@ import { uploadMediaMethod, uploadMultipleMedia } from "./imageController";
 import { adminHotelRoomReservation } from "../drizzle/schema";
 import { eq, inArray } from "drizzle-orm";
 import { convertUrlsToPublicId } from "../utils/getPublicIdFromUrl";
+
 import { CloudinaryService } from "../utils/cloudinary-service";
 
 export const hotelRouter = new Hono();
 
 hotelRouter.get("/type-of-rooms", async (c: Context) => {});
+
+hotelRouter.put("/update/:roomType", async (c: Context) => {
+  try {
+    const roomType = c.req.param("roomType");
+
+    if (!roomType) {
+      return c.json({ error: "Missing room type parameter." }, 400);
+    }
+
+    const body = await c.req.json();
+    console.log("=== PUT /update/:roomType ===");
+    console.log("Room type:", roomType);
+    console.log("Body:", JSON.stringify(body, null, 2));
+
+    const { price, occupancy, total_rooms, description, position } = body;
+
+    // Validate at least one field is being updated
+    if (
+      price === undefined &&
+      occupancy === undefined &&
+      total_rooms === undefined &&
+      description === undefined &&
+      position === undefined
+    ) {
+      return c.json({ error: "No fields provided to update." }, 400);
+    }
+
+    // 1. Build the DB update object with only provided fields
+    const dbUpdate: Record<string, any> = {};
+    if (price !== undefined) dbUpdate.price = parseInt(price, 10);
+    if (occupancy !== undefined) dbUpdate.occupancy = parseInt(occupancy, 10);
+    if (total_rooms !== undefined) dbUpdate.totalRooms = total_rooms.toString();
+
+    // 2. Update the DB record
+    let updatedRoom = null;
+    if (Object.keys(dbUpdate).length > 0) {
+      const result = await db
+        .update(adminHotelRoomReservation)
+        .set(dbUpdate)
+        .where(eq(adminHotelRoomReservation.typeOfRoom, roomType))
+        .returning();
+
+      if (result.length === 0) {
+        return c.json(
+          { error: `No room found in database with room_type: ${roomType}` },
+          404,
+        );
+      }
+
+      updatedRoom = result[0];
+      console.log("DB updated:", updatedRoom);
+    }
+
+    // 3. Update Cloudinary context metadata for all images of this room type
+    const cloudinaryService = new CloudinaryService();
+
+    // Search for all Cloudinary assets with this room_type context
+    const searchExpression = `context.room_type="${roomType}"`;
+    console.log(
+      `[CloudinaryService] Searching for assets: ${searchExpression}`,
+    );
+
+    const searchResult = await (await import("cloudinary")).v2.search
+      .expression(searchExpression)
+      .with_field("context")
+      .max_results(500)
+      .execute();
+
+    const assetsToUpdate = searchResult.resources as Array<{
+      public_id: string;
+      resource_type: string;
+    }>;
+
+    console.log(
+      `Found ${assetsToUpdate.length} Cloudinary asset(s) to update.`,
+    );
+
+    // Build the new context — always preserve position:"rooms" so the
+    // listByMetadata("position","rooms","hotel-rooms") fetch keeps finding
+    // these assets after an update. Only overwrite other fields if provided.
+    const newContext: Record<string, string> = {
+      room_type: roomType,
+      position: "rooms", // hardcoded sentinel — never remove this
+    };
+    if (price !== undefined) newContext.price = price.toString();
+    if (description !== undefined) newContext.description = description;
+
+    // Update context on each asset
+    const cloudinaryUpdateResults = await Promise.allSettled(
+      assetsToUpdate.map((asset) =>
+        cloudinaryService.updateMedia(asset.public_id, {
+          context: newContext,
+          forceResourceType:
+            asset.resource_type === "video" ? "video" : "image",
+        }),
+      ),
+    );
+
+    const successCount = cloudinaryUpdateResults.filter(
+      (r) => r.status === "fulfilled",
+    ).length;
+    const failCount = cloudinaryUpdateResults.filter(
+      (r) => r.status === "rejected",
+    ).length;
+
+    console.log(
+      `Cloudinary update: ${successCount} succeeded, ${failCount} failed`,
+    );
+
+    return c.json(
+      {
+        success: true,
+        message: `Successfully updated room type: ${roomType}`,
+        details: {
+          updated_db_record: updatedRoom,
+          cloudinary_assets_updated: successCount,
+          cloudinary_assets_failed: failCount,
+        },
+      },
+      200,
+    );
+  } catch (error: any) {
+    console.error("Error updating hotel room:", error);
+    return c.json(
+      { error: "Internal server error", details: error.message },
+      500,
+    );
+  }
+});
 
 hotelRouter.post("/create", async (c: Context) => {
   try {
@@ -73,13 +203,17 @@ hotelRouter.post("/create", async (c: Context) => {
     console.log([primaryImage]);
     console.log(otherImages);
 
+    if (!(primaryImage instanceof File)) {
+      return c.json({ error: "Primary image is not a valid file." }, 400);
+    }
+
     // 6. Upload the primary image for the main database record
     const uploadPrimaryImage: UploadFileResult | undefined =
       await uploadMediaMethod(primaryImage, "hotel-rooms", {
         price: price.toString(),
         description: description || "",
         room_type: room_type,
-        position: position || "",
+        position: "rooms", // hardcoded: this is what listByMetadata queries for
       });
 
     if (!uploadPrimaryImage?.secure_url || !uploadPrimaryImage?.optimized_url) {
@@ -108,7 +242,7 @@ hotelRouter.post("/create", async (c: Context) => {
           price: price.toString(),
           description: description || "",
           room_type: room_type,
-          position: position || "",
+          position: "rooms", // hardcoded: this is what listByMetadata queries for
         },
       });
       console.log(uploadResults);
