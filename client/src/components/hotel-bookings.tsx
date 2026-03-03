@@ -75,6 +75,7 @@ export type TableDataType = {
     joinDate: string;
     leaveDate: string;
     createdAt: string;
+    secondaryDocImgUrl?: string | null;
 };
 
 export const schema = z.object({
@@ -92,6 +93,7 @@ export const schema = z.object({
     joinDate: z.string(),
     leaveDate: z.string(),
     createdAt: z.string(),
+    secondaryDocImgUrl: z.string().optional().nullable(),
 });
 
 const createColumns = (
@@ -358,6 +360,7 @@ export function HotelBookings({
                         item.createdAt,
                     ).toLocaleString(),
                     "Document URL": item.aadharOrPanImgUrl,
+                    "Secondary Document URL": item.secondaryDocImgUrl || "",
                 };
             });
 
@@ -385,6 +388,7 @@ export function HotelBookings({
                 { wch: 15 }, // Payment Status
                 { wch: 20 }, // Booking Created At
                 { wch: 30 }, // Document URL
+                { wch: 30 }, // Secondary Document URL
             ];
             worksheet["!cols"] = columnWidths;
 
@@ -551,7 +555,7 @@ function TableCellViewer({
                 </DrawerHeader>
                 <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
                     {/* Document Image Section */}
-                    <div className="grid gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-2">
                             <Label>Aadhar/PAN Document</Label>
                             <div className="w-32 h-20 rounded-lg overflow-hidden border">
@@ -561,6 +565,22 @@ function TableCellViewer({
                                     className="w-full h-full object-cover"
                                 />
                             </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <Label>Secondary Document</Label>
+                            {item.secondaryDocImgUrl ? (
+                                <div className="w-32 h-20 rounded-lg overflow-hidden border">
+                                    <img
+                                        src={item.secondaryDocImgUrl}
+                                        alt="Secondary Document"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            ) : (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Not provided
+                                </p>
+                            )}
                         </div>
                     </div>
 
