@@ -28,6 +28,8 @@ export const adminHotelRoomReservation = pgTable(
     price: integer().notNull(),
     roomImage: text("room-image").notNull(),
     totalRooms: text("total_rooms").default("1").notNull(),
+    onSale: boolean("on_sale").default(false).notNull(),
+    saleValue: integer("sale_value"),
   },
   (table) => [
     unique("adminHotelRoomReservation_type_of_room_key").on(table.typeOfRoom),

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
     Select,
     SelectContent,
@@ -245,6 +246,8 @@ export function RoomUpload({
     const [uploading, setUploading] = useState(false);
     const [open, setOpen] = useState(false);
     const [roomType, setRoomType] = useState<string>("");
+    const [onSale, setOnSale] = useState(false);
+    const [saleValue, setSaleValue] = useState("");
     const formRef = useRef<HTMLFormElement>(null);
     const location = useLocation();
     const queryClient = useQueryClient();
@@ -342,6 +345,13 @@ export function RoomUpload({
                 }
             });
 
+            if (onSale) {
+                formData.append("on_sale", "true");
+            }
+            if (saleValue && !isNaN(Number(saleValue))) {
+                formData.append("sale_value", saleValue.trim());
+            }
+
             // Debug: Log FormData contents
             console.log("📤 Uploading room data to /room/create-multiple:");
             console.log(`Files count: ${selectedFiles.length}`);
@@ -400,6 +410,8 @@ export function RoomUpload({
                 // Reset form and close dialog
                 setSelectedFiles([]);
                 setRoomType("");
+                setOnSale(false);
+                setSaleValue("");
                 setOpen(false);
 
                 if (formRef.current) {
@@ -599,6 +611,54 @@ export function RoomUpload({
                                     <div className="space-y-4">
                                         {fields.map((field, index) =>
                                             renderField(field, index),
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Sale fields */}
+                                <div className="grid gap-3">
+                                    <Label className="text-sm font-medium text-muted-foreground">
+                                        Sale Settings
+                                    </Label>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2">
+                                            <Checkbox
+                                                id="on-sale"
+                                                checked={onSale}
+                                                onCheckedChange={(checked) =>
+                                                    setOnSale(checked === true)
+                                                }
+                                                disabled={uploading}
+                                            />
+                                            <Label
+                                                htmlFor="on-sale"
+                                                className="text-sm font-normal cursor-pointer"
+                                            >
+                                                On Sale
+                                            </Label>
+                                        </div>
+                                        {onSale && (
+                                            <div className="space-y-1.5">
+                                                <Label
+                                                    htmlFor="sale-value"
+                                                    className="text-sm font-medium"
+                                                >
+                                                    Sale Value (₹)
+                                                </Label>
+                                                <Input
+                                                    id="sale-value"
+                                                    type="number"
+                                                    min={0}
+                                                    value={saleValue}
+                                                    onChange={(e) =>
+                                                        setSaleValue(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    disabled={uploading}
+                                                    placeholder="e.g. 3000"
+                                                />
+                                            </div>
                                         )}
                                     </div>
                                 </div>

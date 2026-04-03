@@ -253,6 +253,7 @@ import { Spinner } from "./ui/spinner";
 import { toast } from "sonner";
 import { instance } from "@/utils/axios";
 import { useRoomStore } from "@/store/room-store";
+import { useQuery } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
 
@@ -260,6 +261,7 @@ import { Badge } from "@/components/ui/badge";
 // A Sheet that shows room details and allows editing metadata (no image changes)
 function EditRoomSheet({
     group,
+    roomDbData,
     onUpdateSuccess,
 }: {
     group: {
@@ -269,6 +271,11 @@ function EditRoomSheet({
         description: string;
         images: string[];
         rooms: any[];
+    };
+    roomDbData?: {
+        onSale: boolean;
+        saleValue: number | null;
+        occupancy: number;
     };
     onUpdateSuccess?: () => void;
 }) {
@@ -285,6 +292,10 @@ function EditRoomSheet({
     const [editDescription, setEditDescription] = React.useState(
         group.description || "",
     );
+    const [editOnSale, setEditOnSale] = React.useState(roomDbData?.onSale ?? false);
+    const [editSaleValue, setEditSaleValue] = React.useState(
+        roomDbData?.saleValue?.toString() ?? "",
+    );
 
     // Reset form to latest group values whenever the sheet opens or mode changes
     React.useEffect(() => {
@@ -292,13 +303,17 @@ function EditRoomSheet({
             setEditPrice(group.price);
             setEditTotalRooms(group.total_rooms.toString());
             setEditDescription(group.description || "");
+            setEditOnSale(roomDbData?.onSale ?? false);
+            setEditSaleValue(roomDbData?.saleValue?.toString() ?? "");
         }
-    }, [isOpen, group]);
+    }, [isOpen, group, roomDbData]);
 
     const handleCancelEdit = () => {
         setEditPrice(group.price);
         setEditTotalRooms(group.total_rooms.toString());
         setEditDescription(group.description || "");
+        setEditOnSale(roomDbData?.onSale ?? false);
+        setEditSaleValue(roomDbData?.saleValue?.toString() ?? "");
         setMode("view");
     };
 
@@ -320,6 +335,8 @@ function EditRoomSheet({
                 price: Number(editPrice),
                 total_rooms: editTotalRooms,
                 description: editDescription,
+                on_sale: editOnSale,
+                sale_value: editOnSale && editSaleValue ? Number(editSaleValue) : null,
             };
             if (editOccupancy && !isNaN(Number(editOccupancy))) {
                 payload.occupancy = Number(editOccupancy);
@@ -430,7 +447,7 @@ function EditRoomSheet({
                     </div>
                 </SheetHeader>
 
-                <ScrollArea className="flex-1 px-6">
+                <div className="flex-1 overflow-y-auto px-6">
                     <div className="py-6 space-y-6">
                         {/* ══════════════ VIEW MODE ══════════════ */}
                         {mode === "view" && (
@@ -465,6 +482,24 @@ function EditRoomSheet({
                                                 ₹{group.price}
                                             </p>
                                         </div>
+                                        <div>
+                                            <span className="text-muted-foreground">
+                                                On Sale
+                                            </span>
+                                            <p className="font-medium mt-0.5">
+                                                {roomDbData?.onSale ? "Yes" : "No"}
+                                            </p>
+                                        </div>
+                                        {roomDbData?.onSale && roomDbData?.saleValue && (
+                                            <div>
+                                                <span className="text-muted-foreground">
+                                                    Sale Price
+                                                </span>
+                                                <p className="font-medium text-green-600 mt-0.5">
+                                                    ₹{roomDbData.saleValue}
+                                                </p>
+                                            </div>
+                                        )}
                                         <div>
                                             <span className="text-muted-foreground">
                                                 Images
@@ -751,6 +786,49 @@ function EditRoomSheet({
                                     />
                                 </div>
 
+                                {/* On Sale */}
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center gap-2">
+                                        <Checkbox
+                                            id="edit-on-sale"
+                                            checked={editOnSale}
+                                            onCheckedChange={(checked) =>
+                                                setEditOnSale(checked === true)
+                                            }
+                                            disabled={isSaving}
+                                        />
+                                        <Label
+                                            htmlFor="edit-on-sale"
+                                            className="text-sm font-medium cursor-pointer"
+                                        >
+                                            On Sale
+                                        </Label>
+                                    </div>
+                                </div>
+
+                                {/* Sale Value */}
+                                {editOnSale && (
+                                    <div className="space-y-1.5">
+                                        <Label
+                                            htmlFor="edit-sale-value"
+                                            className="text-sm font-medium"
+                                        >
+                                            Sale Value (₹)
+                                        </Label>
+                                        <Input
+                                            id="edit-sale-value"
+                                            type="number"
+                                            min={0}
+                                            value={editSaleValue}
+                                            onChange={(e) =>
+                                                setEditSaleValue(e.target.value)
+                                            }
+                                            disabled={isSaving}
+                                            placeholder="e.g. 3000"
+                                        />
+                                    </div>
+                                )}
+
                                 <Separator />
 
                                 {/* Save / Cancel */}
@@ -784,7 +862,7 @@ function EditRoomSheet({
                             </div>
                         )}
                     </div>
-                </ScrollArea>
+                </div>
             </SheetContent>
         </Sheet>
     );
@@ -809,7 +887,35 @@ export function HotelRooms({
     );
     const [isDeleting, setIsDeleting] = React.useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
-    const { selectedRoomTypes, count, updateStore } = useRoomStore(); // Correct destructuring
+    const { selectedRoomTypes, count, updateStore } = useRoomStore();
+
+    const { data: roomDbData } = useQuery({
+        queryKey: ["room-types"],
+        queryFn: async () => {
+            const response = await instance.get("/room/type-of-rooms");
+            return response.data.rooms as Array<{
+                typeOfRoom: string;
+                occupancy: number;
+                price: number;
+                roomImage: string;
+                totalRooms: string;
+                onSale: boolean;
+                saleValue: number | null;
+            }>;
+        },
+    });
+
+    const roomDbMap = React.useMemo(() => {
+        const map: Record<string, { onSale: boolean; saleValue: number | null; occupancy: number }> = {};
+        roomDbData?.forEach((room) => {
+            map[room.typeOfRoom] = {
+                onSale: room.onSale,
+                saleValue: room.saleValue,
+                occupancy: room.occupancy,
+            };
+        });
+        return map;
+    }, [roomDbData]);
 
     // Update data when initialData changes
     React.useEffect(() => {
@@ -1052,6 +1158,7 @@ export function HotelRooms({
                 return (
                     <EditRoomSheet
                         group={group}
+                        roomDbData={roomDbMap[group.room_type]}
                         onUpdateSuccess={onDeleteSuccess}
                     />
                 );

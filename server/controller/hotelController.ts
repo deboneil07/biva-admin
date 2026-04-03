@@ -10,7 +10,29 @@ import { CloudinaryService } from "../utils/cloudinary-service";
 
 export const hotelRouter = new Hono();
 
-hotelRouter.get("/type-of-rooms", async (c: Context) => {});
+hotelRouter.get("/type-of-rooms", async (c: Context) => {
+  try {
+    const rooms = await db
+      .select({
+        typeOfRoom: adminHotelRoomReservation.typeOfRoom,
+        occupancy: adminHotelRoomReservation.occupancy,
+        price: adminHotelRoomReservation.price,
+        roomImage: adminHotelRoomReservation.roomImage,
+        totalRooms: adminHotelRoomReservation.totalRooms,
+        onSale: adminHotelRoomReservation.onSale,
+        saleValue: adminHotelRoomReservation.saleValue,
+      })
+      .from(adminHotelRoomReservation);
+
+    return c.json({ success: true, rooms }, 200);
+  } catch (error: any) {
+    console.error("Error fetching room types:", error);
+    return c.json(
+      { error: "Internal server error", details: error.message },
+      500,
+    );
+  }
+});
 
 hotelRouter.put("/update/:roomType", async (c: Context) => {
   try {
@@ -25,7 +47,7 @@ hotelRouter.put("/update/:roomType", async (c: Context) => {
     console.log("Room type:", roomType);
     console.log("Body:", JSON.stringify(body, null, 2));
 
-    const { price, occupancy, total_rooms, description, position } = body;
+    const { price, occupancy, total_rooms, description, position, on_sale, sale_value } = body;
 
     // Validate at least one field is being updated
     if (
@@ -33,7 +55,9 @@ hotelRouter.put("/update/:roomType", async (c: Context) => {
       occupancy === undefined &&
       total_rooms === undefined &&
       description === undefined &&
-      position === undefined
+      position === undefined &&
+      on_sale === undefined &&
+      sale_value === undefined
     ) {
       return c.json({ error: "No fields provided to update." }, 400);
     }
@@ -43,6 +67,8 @@ hotelRouter.put("/update/:roomType", async (c: Context) => {
     if (price !== undefined) dbUpdate.price = parseInt(price, 10);
     if (occupancy !== undefined) dbUpdate.occupancy = parseInt(occupancy, 10);
     if (total_rooms !== undefined) dbUpdate.totalRooms = total_rooms.toString();
+    if (on_sale !== undefined) dbUpdate.onSale = on_sale === true || on_sale === "true";
+    if (sale_value !== undefined) dbUpdate.saleValue = sale_value !== null ? parseInt(sale_value, 10) : null;
 
     // 2. Update the DB record
     let updatedRoom = null;
@@ -166,6 +192,18 @@ hotelRouter.post("/create", async (c: Context) => {
       typeof body["price"] === "string" ? parseInt(body["price"], 10) : null;
     const position =
       typeof body["position"] === "string" ? body["position"] : null;
+    const on_sale =
+      typeof body["on_sale"] === "string"
+        ? body["on_sale"] === "true"
+        : body["on_sale"] === true
+          ? true
+          : false;
+    const sale_value =
+      typeof body["sale_value"] === "string"
+        ? parseInt(body["sale_value"], 10)
+        : typeof body["sale_value"] === "number"
+          ? body["sale_value"]
+          : null;
 
     const fileCount =
       typeof body["fileCount"] === "string"
@@ -228,7 +266,9 @@ hotelRouter.post("/create", async (c: Context) => {
         occupancy: occupancy,
         price: price,
         roomImage: uploadPrimaryImage.optimized_url,
-        totalRooms: total_rooms?.toString() ?? "", // Use nullish coalescing for safety
+        totalRooms: total_rooms?.toString() ?? "",
+        onSale: on_sale,
+        saleValue: sale_value,
       })
       .returning();
 
